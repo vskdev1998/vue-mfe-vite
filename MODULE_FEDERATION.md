@@ -1033,140 +1033,788 @@ point a remote at a different URL (e.g. your local dev server) on a deployed pag
 
 ## 7. Error reference: every coded error
 
-Runtime errors look like:
+This section covers each runtime error code in the order you'll debug it: **when** it happens,
+**why**, a **snippet that reproduces it**, **how to diagnose**, the **fix** (with code), and
+**what to watch out for**. Messages, `args` fields and the places that throw them come from
+the installed runtime (`@module-federation/runtime-core` 2.9.x, `@module-federation/error-codes`).
+Official reference: [module-federation.io/guide/troubleshooting/runtime](https://module-federation.io/guide/troubleshooting/runtime.html).
+
+### 7.1 How to read a runtime error
+
+Every coded error is built the same way (`getShortErrorMsg` in `@module-federation/error-codes`):
+
+```
+[ Federation Runtime ]: Failed to load script resources. #RUNTIME-008      ← description + code
+args: {"remoteName":"shellA","resourceUrl":"http://localhost:8081/remoteEntry.js"}  ← context
+View the docs to see how to solve: https://module-federation.io/guide/troubleshooting/runtime#runtime-008
+Original Error Message:                                                     ← only some codes
+ TypeError: Failed to fetch dynamically imported module: http://localhost:8081/remoteEntry.js
+```
+
+1. **The code** tells you the phase (table below).
+2. **`args`** names the host, the remote, the URL or the expose. Start there.
+3. **`Original Error Message`** (008, 003, 015) is the browser's or the remote's own error.
+   It is usually the real cause.
+
+You can reproduce most errors without a browser. This prints the exact messages above
+(run it from the repo root with Node 22):
+
+```js
+// scripts/mf-errors-demo.mjs   (npm run mf:errors)
+import * as rt from '@module-federation/runtime'
+
+const show = async (code, fn) => {
+  try { await fn() } catch (e) { console.log(`\n--- ${code}\n${e.message}`) }
+}
+
+await show('RUNTIME-009', () => rt.loadRemote('shellA/App'))            // no instance yet
+const mf = rt.init({
+  name: 'host',
+  remotes: [{ name: 'shellA', type: 'module', entry: 'http://127.0.0.1:9/remoteEntry.js' }],
+})
+await show('RUNTIME-004', () => mf.loadRemote('shellZ/App'))             // unknown remote
+await show('RUNTIME-008', () => mf.loadRemote('shellA/App'))             // nothing listening
+rt.registerShared({
+  dep: { version: '1.0.0', get: () => Promise.resolve(() => ({})), shareConfig: { requiredVersion: false } },
+})
+await show('RUNTIME-006', () => mf.loadShareSync('dep'))                  // async share, sync call
+```
+
+> In Node, RUNTIME-008 shows as `Failed to load Node.js entry for remote "shellA" … fetch failed`,
+> because the Node loader is used. In the browser you get the coded message.
+
+### 7.2 Which phase throws which code
+
+`import('shellA/App')` (compiled to `loadRemote('shellA/App')`) walks through these steps.
+The code tells you which step failed.
+
+| # | Step | What the runtime does | Codes |
+| --- | --- | --- | --- |
+| 0 | Instance | Host init script creates the federation instance (`createInstance`/`init`) | **009**, **010** |
+| 1 | Match | Splits `shellA/App` into remote `shellA` + expose `./App`, finds `shellA` in `remotes` | **004** |
+| 2 | Snapshot / manifest | Only when `entry` is `mf-manifest.json` or a version: fetch + validate manifest | **003**, **013**, **007**, **011** |
+| 3 | Load entry | Injects / imports `remoteEntry.js`, reads its exports | **008**, **001** |
+| 4 | Init container | Calls `container.init(shareScope)` to negotiate shared deps | **002**, **015** |
+| 5 | Get expose | Calls `container.get('./App')` | **014** |
+| 6 | Shared deps | `loadShare` / `loadShareSync` for `vue` etc. | **005**, **006**, **012** |
+
+### 7.3 Triage: symptom → code
+
+| You see | Most likely code | First check |
+| --- | --- | --- |
+| Blank remote area, red 404/ERR_CONNECTION_REFUSED in Network | 008 | Is the remote's dev server running? Is the URL in `.env.[mode]` right? |
+| `blocked by CORS policy` in Console | 008 | Remote's `VITE_CORS_ORIGINS` includes the page's origin? |
+| Entry URL returns HTML | 001 / 008 | SPA fallback served `index.html` for a wrong path |
+| Works in dev, fails after `vite build` | 008 / 014 / 015 | Absolute `base` (`VITE_PUBLIC_URL`), same `filename`, remote deployed first |
+| Works standalone, fails in host | 015 / 005 | Shared dependency versions, eager / top-level reads of shared libs |
+| Works in host, fails standalone | 008 / 012 | The remote's own remotes (here: `host/ui-dev`) must be reachable |
+| `import('shellA/Foo')` fails, `shellA/App` works | 014 | `exposes` keys |
+| Only with `mf-manifest.json` URLs | 003 / 013 / 007 / 011 | Manifest URL, CORS, manifest content |
+| Only when calling the runtime API yourself | 009 / 010 / 006 | Order of calls, duplicate runtime package |
+
+### 7.4 Every runtime code in detail
+
+#### RUNTIME-001: Failed to get remoteEntry exports
+
+```
+[ Federation Runtime ]: Failed to get remoteEntry exports. #RUNTIME-001
+args: {"remoteName":"legacy","remoteEntryUrl":"https://legacy.example.com/remoteEntry.js","remoteEntryKey":"legacy"}
+```
+
+**When it happens:** step 3, right after a **script-type** entry (`type: 'var'`, `'global'`,
+`'script'`) finished loading. Thrown in `runtime-core/src/utils/load` (`handleRemoteEntryLoaded`).
+
+**Why:** the script loaded without a network error, but the global it should have created
+(`window[remoteEntryKey]`, i.e. `entryGlobalName`) doesn't exist. Common reasons:
+
+- `entryGlobalName` differs from the remote's real `name` (`shell_a` vs `shellA`).
+- The URL served **something else that happens to be valid JS or HTML**: an SPA fallback
+  `index.html`, a CDN error page, a redirect to a login page.
+- The remote is an **ES module** (every Vite remote) but the host declared `type: 'var'`.
+  An ES module never writes a global.
+- The remote was built with `library.type: 'module'` / `'system'` but declared as `var`.
+
+**Reproduce:**
+
+```js
+// host: a Vite (ESM) remote declared as a webpack "var" remote
+remotes: { shellA: { type: 'var', name: 'shellA', entry: 'http://localhost:8081/remoteEntry.js' } }
+```
+
+**Diagnose:**
+
+```js
+// 1. what does the URL really return?
+fetch('http://localhost:8081/remoteEntry.js').then((r) => console.log(r.status, r.headers.get('content-type')))
+// 2. after the error, is the global there?
+console.log(Object.keys(window).filter((k) => /shell/i.test(k)))
+```
+
+- Content-type `text/html` → wrong URL / SPA fallback.
+- File starts with `import …` / `export …` → it is ESM, use `type: 'module'`.
+- File starts with `var shellA;` → `var` entry, check the global's name.
+
+**Fix:**
+
+```js
+// Vite remote → always 'module'
+shellA: { type: 'module', name: 'shellA', entry: 'http://localhost:8081/remoteEntry.js' }
+
+// webpack/rspack remote with library.type 'var' → global must match the remote's name
+legacy: { type: 'var', name: 'legacy', entry: 'https://legacy.example.com/remoteEntry.js', entryGlobalName: 'legacy' }
+```
+
+**Watch out for:**
+- Two remotes with the same `name` overwrite each other's global.
+- A `name` with a dash (`shell-a`) produces a different global than you expect. Use valid
+  JS identifiers (`shellA`).
+- Servers that answer every unknown path with `200 index.html` hide this as a "successful"
+  load. Configure the static host to return 404 for missing `.js` files.
+
+---
+
+#### RUNTIME-002: The remote entry interface does not contain "init"
+
+```
+[ Federation Runtime ]: The remote entry interface does not contain "init" #RUNTIME-002
+args: {"hostName":"host","remoteName":"shellA","remoteEntryUrl":"…/remoteEntry.js","remoteEntryKey":"shellA"}
+```
+
+**When it happens:** step 4, before `container.init()` is called (`runtime-core/src/module`).
+
+**Why:** the entry loaded and exported *something*, but not a federation container
+(`{ get, init }`):
+
+- `entry` points to the app's **main bundle** (`/assets/index-abc.js`) or `index.html`
+  instead of `remoteEntry.js`.
+- The `filename` changed on the remote (`remoteEntry.[hash].js`) and the host still loads an
+  old file that is now a different chunk.
+- A custom `loadEntry` / `getModuleFactory` runtime plugin returned the wrong object.
+- A very old (webpack MF v1 era) container, or a global that another script overwrote.
+
+**Reproduce:**
+
+```js
+shellA: { type: 'module', name: 'shellA', entry: 'http://localhost:8081/src/main.mjs' } // app entry, not a container
+```
+
+**Diagnose:**
+
+```js
+const m = await import('http://localhost:8081/remoteEntry.js')
+console.log(Object.keys(m))     // a Vite container exports: get, init (+ helpers)
+```
+
+**Fix:** point `entry` at the file named by the remote's `filename` (here `remoteEntry.js`), at
+the root of the remote's `base`. For `var` remotes keep `entryGlobalName === name`. If you
+wrote a `loadEntry` plugin, return `{ get, init }`.
+
+**Watch out for:** CDN paths that add a version folder (`/v1.4.2/remoteEntry.js`) in one
+environment only. Keep the URL in `.env.[mode]` and run `npm run check:env`.
+
+---
+
+#### RUNTIME-003: Failed to get manifest
+
+```
+[ Federation Runtime ]: Failed to get manifest. #RUNTIME-003
+args: {"manifestUrl":"https://shell-a.example.com/mf-manifest.json","moduleName":"shellA","hostName":"host"}
+Original Error Message:
+ TypeError: Failed to fetch
+```
+
+**When it happens:** step 2, only when a remote's `entry` is a **manifest** (`…/mf-manifest.json`).
+Thrown in `SnapshotHandler.getManifestJson` after the `fetch` hook and every recovery hook gave up.
+
+**Why:** the manifest `fetch()` failed or its body isn't JSON: 404 (the remote doesn't emit a
+manifest), CORS, network error, auth redirect returning HTML, or `JSON.parse` failing.
+
+**Reproduce:**
+
+```js
+// remote without manifest: true, host asks for the manifest anyway
+shellA: { type: 'module', name: 'shellA', entry: 'http://localhost:8081/mf-manifest.json' }
+```
+
+**Diagnose:**
+
+```js
+const r = await fetch('http://localhost:8081/mf-manifest.json')
+console.log(r.status, r.headers.get('content-type'), (await r.text()).slice(0, 80))
+```
+
+**Fix:**
+
+```js
+// remote: emit it
+federation({ name: 'shellA', manifest: true /* → dist/mf-manifest.json */ })
+
+// or host: go back to the plain entry
+shellA: { type: 'module', name: 'shellA', entry: 'http://localhost:8081/remoteEntry.js' }
+```
+
+Add auth headers or retries for manifests with a runtime plugin:
+
+```js
+export default () => ({
+  name: 'manifest-auth',
+  async fetch(url, init) {
+    if (!url.endsWith('mf-manifest.json')) return
+    return fetch(url, { ...init, credentials: 'include', headers: { ...init?.headers, 'x-api-gateway-key': import.meta.env.VITE_API_GATEWAY_KEY } })
+  },
+})
+```
+
+**Watch out for:** the manifest is fetched with `fetch()`, so CORS applies even where a
+`<script>` tag would have worked. In dev, Vite's `server.cors` must allow the host's origin.
+
+---
+
+#### RUNTIME-004: Failed to locate remote
+
+```
+[ Federation Runtime ]: Failed to locate remote. #RUNTIME-004
+args: {"hostName":"host","requestId":"shellZ/App"}
+```
+
+**When it happens:** step 1, in `RemoteHandler.getRemoteModuleAndOptions`, before anything is
+downloaded.
+
+**Why:** the part before `/` in the request doesn't match any `remotes[].name` or `alias` of
+this instance:
+
+- Typo or case difference (`ShellA/App`, `shell-a/App`).
+- The remote is declared in **another app's** config (e.g. a remote imports `shellB/App`, but
+  only the host declares `shellB`).
+- A remote meant to be added at runtime (`registerRemotes`) hasn't been registered yet.
+- `alias` used in the request but not set on the remote.
+
+**Reproduce:** see the demo script in 7.1, or:
+
+```js
+import('shellZ/App') // 'shellZ' is not in remotes
+```
+
+**Diagnose:**
+
+```js
+__FEDERATION__.__INSTANCES__.map((i) => [i.name, i.options.remotes.map((r) => r.alias || r.name)])
+```
+
+**Fix:**
+
+```js
+// 1. static: add it to the consuming app's config
+remotes: { shellZ: { type: 'module', name: 'shellZ', entry: env.raw.VITE_SHELL_Z_ENTRY } }
+
+// 2. runtime: register before loading
+import { registerRemotes, loadRemote } from '@module-federation/runtime'
+registerRemotes([{ name: 'shellZ', type: 'module', entry: url }])
+await loadRemote('shellZ/App')
+```
+
+Restart `vite` after changing `remotes`. The plugin generates virtual modules at startup.
+
+**Watch out for:** the request id is `<remote name>/<expose without ./>`. `import('shellA/./App')`
+or `import('shellA')` (no expose) also fail to match.
+
+---
+
+#### RUNTIME-005: Invalid loadShareSync function call from bundler runtime
+
+```
+[ Federation Runtime ]: Invalid loadShareSync function call from bundler runtime #RUNTIME-005
+args: {"hostName":"shellA","sharedPkgName":"vue"}
+```
+
+**When it happens:** step 6, when **generated bundler code** (`from: 'build'`) needs a shared
+module synchronously, the only available provider is still async (`get()` returns a Promise).
+Thrown in `SharedHandler.loadShareSync`.
+
+**Why:**
+- A module reads a shared library **at evaluation time** in a chunk that runs before the
+  share scope is initialised (top-level `createApp()` in the entry, `Vue.version` at the top
+  of a module).
+- `eager: true` on one side and not the other, so one container expects a sync copy the
+  other only offers asynchronously.
+- The host init script didn't run first (custom HTML without the injected script, or
+  `hostInitInjectLocation` changed).
+
+**Reproduce:**
+
+```js
+// remote main.mjs, evaluated before the share scope is ready
+shared: { vue: { singleton: true, eager: false } }   // remote
+shared: { vue: { singleton: true, eager: true } }    // host: mismatch
+```
+
+**Diagnose:** look at `sharedPkgName`. Check every app's `shared[pkg].eager`. In DevTools, set
+a breakpoint on the error and look at the call stack: the first non-runtime frame is the
+module doing the synchronous read.
+
+**Fix:**
+
+```js
+// 1. keep eager identical (this repo: never eager)
+shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } }
+
+// 2. move synchronous reads behind an async boundary (this repo's pattern)
+// src/expose/App.mjs
+await import('host/ui-dev')        // everything after this runs once shares are ready
+export { default } from '../App.vue'
+```
+
+**Watch out for:** don't "fix" it with `eager: true` everywhere. Eager shares are bundled into
+every entry and are not negotiated, so you lose singleton guarantees.
+
+---
+
+#### RUNTIME-006: Invalid loadShareSync function call from runtime
+
+```
+[ Federation Runtime ]: Invalid loadShareSync function call from runtime #RUNTIME-006
+args: {"hostName":"host","sharedPkgName":"dep"}
+```
+
+**When it happens:** step 6, when **your code** calls `loadShareSync('pkg')` and either:
+- the provider's `get()` returns a Promise (it hasn't been loaded yet), or
+- no provider has a `lib` or `get` at all for that package.
+
+**Why:** `loadShareSync` can only return something that is already in memory.
+
+**Reproduce:** the demo in 7.1 (`registerShared` with an async `get`, then `loadShareSync`).
+
+**Fix:**
+
+```js
+// async version: always works
+const factory = await loadShare('dep')
+const dep = factory && factory()
+
+// or provide a sync copy up front
+registerShared({ dep: { version: '1.0.0', lib: () => dep, shareConfig: { requiredVersion: false } } })
+```
+
+**Watch out for:** calling `loadShareSync` in module top-level code of a lazily loaded
+remote: it may work in dev (already loaded by another app) and fail in production
+(different load order).
+
+---
+
+#### RUNTIME-007: Failed to get remote snapshot
+
+```
+[ Federation Runtime ]: Failed to get remote snapshot. #RUNTIME-007
+args: {"remoteName":"shellA","remoteVersion":"1.2.0","hostName":"host","globalSnapshot":"{…}"}
+```
+
+**When it happens:** step 2, in `SnapshotHandler.loadRemoteSnapshotInfo`, when the runtime
+needs a snapshot for a remote and **neither** a global snapshot exists **nor** the remote has an
+`entry` it can fetch.
+
+**Why:**
+- The remote is declared by **version only** (`{ name: 'shellA', version: '1.2.0' }`) and no
+  snapshot was provided (by a deploy service, SSR payload, or `addGlobalSnapshot`).
+- Module Federation **DevTools** overrides point at a remote/version that doesn't exist.
+- A plugin's `loadRemoteSnapshot` / `beforeLoadRemoteSnapshot` hook removed the entry.
+
+**Reproduce:**
+
+```js
+init({ name: 'host', remotes: [{ name: 'shellA', version: '1.2.0' }] })
+await loadRemote('shellA/App')
+```
+
+**Fix:** give every remote an `entry` (`remoteEntry.js` or `mf-manifest.json`), or provide the
+snapshot before loading. Clear the Module Federation DevTools overrides (the extension's
+clear/reset button), then reload.
+
+**Watch out for:** `disableSnapshot: true` removes manifest support entirely. Use it only if
+no remote is loaded by manifest or version.
+
+---
+
+#### RUNTIME-008: Failed to load script resources
 
 ```
 [ Federation Runtime ]: Failed to load script resources. #RUNTIME-008
-args: {"remoteName":"…","resourceUrl":"http://localhost:8080/remoteEntry.js"}
-View the docs to see how to solve: https://module-federation.io/guide/troubleshooting/runtime#runtime-008
+args: {"remoteName":"shellA","resourceUrl":"http://localhost:8081/remoteEntry.js"}
+Original Error Message:
+ TypeError: Failed to fetch dynamically imported module: http://localhost:8081/remoteEntry.js
 ```
 
-Read `args`: it names the remote and the URL that failed.
+**When it happens:** step 3, when the browser can't load `remoteEntry.js` (or, for ESM remotes,
+any module it imports). Thrown in `loadEsmEntry` / `loadEntryScript`. Before throwing, the
+runtime gives `loadEntryError` plugins one chance to recover.
 
-### RUNTIME-001: Failed to get remoteEntry exports
-
-**Cause:** `remoteEntry.js` loaded, but didn't export a container (`get`/`init`). Usually the
-URL returns something else: the host's `index.html` (SPA fallback), a 404 page, or a `var`
-entry loaded as `type: 'module'`.
-**Fix:**
-1. Open the `entry` URL directly in the browser and check it's JavaScript.
-2. Match the `type`: Vite remotes are `'module'`, webpack/rspack are `'var'`.
-3. Check `filename` in the remote equals the file name in the host's URL.
-
-### RUNTIME-002: The remote entry interface does not contain "init"
-
-**Cause:** the loaded file isn't a federation container, or two different runtimes are mixed
-(very old webpack MF 1 container without `init`, or a wrong `entryGlobalName`).
-**Fix:** for `var` remotes make `entryGlobalName` equal the remote's `name`. Rebuild the remote
-with a current plugin. Don't point `entry` at a regular app bundle.
-
-### RUNTIME-003: Failed to get manifest
-
-**Cause:** `entry` ends in `.json` (manifest mode) and the fetch failed or returned non-JSON.
-**Fix:** enable `manifest: true` in the remote, deploy `mf-manifest.json`, check CORS and the URL.
-Or point `entry` at `remoteEntry.js` instead.
-
-### RUNTIME-004: Failed to locate remote
-
-**Cause:** `import('shellX/App')` (or `loadRemote`) uses a remote name that isn't registered.
-Typo, or the remote was not added to `remotes`.
-**Fix:** the prefix before `/` must equal a key in `remotes`. Restart the dev server after
-changing `remotes`.
-
-### RUNTIME-005: Invalid loadShareSync function call from bundler runtime
-
-**Cause:** a shared module was needed synchronously (at module evaluation time) before the
-share scope was ready. Typical with `eager` mismatches or code that reads a shared lib in a
-top-level statement of the entry.
-**Fix:** keep the share async (no `eager`), or make the consumer `await` something first.
-Ensure the host init script runs before the entry (`hostInitInjectLocation: 'html'`).
-
-### RUNTIME-006: Invalid loadShareSync function call from runtime
-
-**Cause:** same as 005, but triggered through the runtime API (`loadShareSync`).
-**Fix:** use `await loadShare(...)`, or provide the dependency eagerly in the host.
-
-### RUNTIME-007: Failed to get remote snapshot
-
-**Cause:** manifest/snapshot mode couldn't resolve the remote's snapshot (manifest unreachable,
-or DevTools override pointing to a dead URL).
-**Fix:** check the manifest URL, clear Module Federation DevTools overrides, or set
-`disableSnapshot` only if you never use manifests.
-
-### RUNTIME-008: Failed to load script resources
-
-**The most common one.** The browser couldn't load `remoteEntry.js` or a chunk.
+**Why:** **The most common error.** The browser couldn't fetch or execute the file.
 
 | Cause | How to see it | Fix in this repo |
 | --- | --- | --- |
-| Remote not running | Network tab: `ERR_CONNECTION_REFUSED` | `npm run dev` at the root (starts all three) |
-| CORS | Console: `blocked by CORS policy` | Add the loading page's origin to the remote's `VITE_CORS_ORIGINS` |
+| Remote not running | Network: `ERR_CONNECTION_REFUSED` | `npm run dev` at the root (starts all three) |
+| CORS | Console: `blocked by CORS policy` | Add the page's origin to the remote's `VITE_CORS_ORIGINS` |
 | Wrong URL | 404 on `remoteEntry.js` | Fix `VITE_SHELL_*_ENTRY` / `VITE_HOST_ENTRY` in `.env.[mode]` |
-| Preview using production URLs | requests to `example.com` | Use `npm run preview` (runs `--mode localprod`) |
-| Mixed content | HTTPS page loading HTTP remote | Serve remotes over HTTPS |
-| CSP | `Refused to load the script` | Allow remote origins in `script-src` |
+| Relative `base` in a build | Chunks requested from the **host's** origin (`:8080/assets/…`) | Absolute `base` (`VITE_PUBLIC_URL`) |
+| Preview using production URLs | requests to `example.com` | `npm run preview` (runs `--mode localprod`) |
+| Mixed content | HTTPS page loading an HTTP remote | Serve remotes over HTTPS |
+| CSP | `Refused to load the script` | Allow remote origins in `script-src` (or nonce via `createScript` hook, §4.6) |
 | Blocked host | 403 `Blocked request. This host is not allowed` | Add it to `VITE_ALLOWED_HOSTS` |
 | macOS AirPlay on :5000 | 403 with no Vite page | Don't use port 5000 on macOS (this repo uses 8080–8082) |
 | Standalone remote, host down | `:8080/remoteEntry.js` fails from `:8081` | Start the host (remotes need `host/ui-dev`) |
+| Syntax error in the remote | `Original Error Message: SyntaxError …` | Open the remote standalone and fix the error |
+| Stale deploy | 404 on `assets/index-<hash>.js` imported by an old cached `remoteEntry.js` | `Cache-Control: no-cache` on `remoteEntry.js` |
 
-### RUNTIME-009: Please call createInstance first
+**Diagnose:**
 
-**Cause:** runtime API (`loadRemote`, `registerRemotes`) used before the federation instance
-exists, often in code that runs before the host init script, or from a second copy of
-`@module-federation/runtime`.
-**Fix:** call it after app start, use `getInstance()`, and make sure only one runtime package
-version is installed (`npm ls @module-federation/runtime`).
+```js
+// in the host's console
+await import('http://localhost:8081/remoteEntry.js').catch((e) => console.error(e)) // shows the real browser error
+```
 
-### RUNTIME-010: The name option cannot be changed after initialization
+Then check the Network tab, filtered by the remote's port or domain.
 
-**Cause:** `init()` / `createInstance()` called again with a different `name`.
-**Fix:** keep one instance per container. For a separate one, use `createInstance({ name })`.
+**Fix with code (resilience):** retry and fall back instead of breaking the page.
 
-### RUNTIME-011: The remoteEntry URL is missing from the remote snapshot
+```js
+// src/mf/retry-entry.mjs  (runtimePlugins: ['./src/mf/retry-entry.mjs'])
+export default () => ({
+  name: 'retry-entry',
+  async loadEntryError({ getRemoteEntry, origin, remoteInfo, remoteEntryExports, globalLoading, uniqueKey }) {
+    await new Promise((r) => setTimeout(r, 800))      // one retry after 800 ms
+    delete globalLoading[uniqueKey]                   // forget the failed attempt
+    return getRemoteEntry({ origin, remoteInfo, remoteEntryExports })
+  },
+})
+```
 
-**Cause:** manifest exists but has no `remoteEntry` (the remote was built with
-`experiments.hostProvidesAllShared` or a broken manifest).
-**Fix:** rebuild the remote with a normal `filename`, or use the matching host mode.
+The UI fallback is already in this repo: `defineRemoteComponent` (`src/utils/defineRemoteComponent.mjs`)
+shows `RemoteFallback.vue` with a Retry button.
 
-### RUNTIME-012: The getter for the shared module is not a function
+**Watch out for:** `globalLoading` caches the failed promise, so later loads fail instantly
+until the page reloads (or the plugin above clears it). `registerRemotes([...], { force: true })`
+also resets a remote.
 
-**Cause:** a share is configured with `import: false` (no local fallback) and nobody provided
-it at runtime, e.g. a remote running standalone while expecting the host's copy.
-**Fix:** remove `import: false`, or make sure the providing container loads first. In this
-repo `vue` keeps a local fallback, so remotes run standalone.
+---
 
-### RUNTIME-013: The manifest is not a valid Module Federation manifest
+#### RUNTIME-009: Please call createInstance first
 
-**Cause:** the `.json` at `entry` isn't an `mf-manifest.json` (wrong file, HTML error page,
-or an old format).
-**Fix:** point to the real manifest from a current build, or to `remoteEntry.js`.
+```
+[ Federation Runtime ]: Please call createInstance first. #RUNTIME-009
+args: {}
+```
 
-### RUNTIME-014: The remote does not expose the requested module
+**When it happens:** step 0, when you call a **global** runtime function (`loadRemote`,
+`loadShare`, `loadShareSync`, `preloadRemote`, `registerRemotes`, `registerPlugins`,
+`registerShared`) from `@module-federation/runtime` and that module has no instance yet.
 
-**Cause:** `import('shellA/Foo')` but `exposes` has no `./Foo`. Or the remote was redeployed
-without it.
-**Fix:** compare the path after the remote name with the keys in `exposes`
-(`shared.federation.json`). Keys need the leading `./`, imports don't.
+**Why:**
+- The call runs **before** the host init code created the instance (top of `main.mjs`, a
+  module imported before federation initialised, a test).
+- **Two copies** of `@module-federation/runtime` are installed. The plugin initialised copy A,
+  your `import` resolved to copy B, which has no instance.
+- You use the runtime API in an app without the build plugin and forgot `init()` /
+  `createInstance()`.
 
-### RUNTIME-015: Remote container initialization failed
+**Reproduce:** the first line of the demo in 7.1.
 
-**Cause:** the remote's `init()` threw: its own share scope negotiation failed, a top-level
-error in an exposed module's dependencies, or an incompatible runtime version.
-**Fix:** open the remote standalone to see its own error. Align `@module-federation/vite`
-versions across apps. Check `requiredVersion`/`strictVersion` of shared deps.
+**Diagnose:**
 
-### TYPE-001: Failed to generate type declaration
+```bash
+npm ls @module-federation/runtime @module-federation/runtime-core   # must show one version each
+```
+
+```js
+__FEDERATION__.__INSTANCES__.map((i) => i.name)   // instances exist, but not in "your" copy?
+```
+
+**Fix:**
+
+```js
+// 1. use the instance the plugin created
+import { getInstance } from '@module-federation/runtime'
+const mf = getInstance()
+await mf.loadRemote('shellA/App')
+
+// 2. no build plugin: create it yourself, once, first
+import { createInstance } from '@module-federation/runtime'
+export const mf = createInstance({ name: 'host', remotes: [/* … */] })
+```
+
+Dedupe: add `@module-federation/runtime` to the app's `dependencies` at the **same version the
+plugin uses**, then `npm dedupe`.
+
+**Watch out for:** in this repo you never need the runtime API for normal use: `import('shellA/App')`
+is enough.
+
+---
+
+#### RUNTIME-010: The name option cannot be changed after initialization
+
+```
+[ Federation Runtime ]: The name option cannot be changed after initialization. If you want to create a new
+instance with a different name, please use "createInstance" api. #RUNTIME-010
+```
+
+**When it happens:** step 0, in `ModuleFederation.initOptions` (called by `init()`), when
+the instance found for this build already has a different `name`.
+
+**Why:** `init()` reuses the existing instance of the **same build** (matched by the bundler's
+build identifier, or by name). Calling `init({ name: 'other' })` from code bundled into that build
+tries to rename it. Typical causes: copy-pasted `init` calls with a different name, a library
+that calls `init` itself, or two apps bundled together under one build id.
+
+**Reproduce:**
+
+```js
+// inside an app built with the federation plugin (its instance is 'host')
+import { init } from '@module-federation/runtime'
+init({ name: 'dashboard', remotes: [] })   // → RUNTIME-010
+```
+
+(In plain Node without a build id, `init` with a new name silently creates a second instance
+instead. Same bug, no error.)
+
+**Fix:**
+
+```js
+// add remotes to the existing instance
+import { registerRemotes } from '@module-federation/runtime'
+registerRemotes([{ name: 'widget', type: 'module', entry: url }])
+
+// or a separate, isolated instance
+import { createInstance } from '@module-federation/runtime'
+const widgets = createInstance({ name: 'dashboard', remotes: [/* … */] })
+```
+
+**Watch out for:** `name` must also be unique **across** apps on the page. Two remotes both
+named `shellA` don't throw 010, they silently overwrite each other.
+
+---
+
+#### RUNTIME-011: The remoteEntry URL is missing from the remote snapshot
+
+```
+[ Federation Runtime ]: The remoteEntry URL is missing from the remote snapshot. #RUNTIME-011
+args: {"remoteName":"shellA"}
+```
+
+**When it happens:** step 2→3, after the manifest/snapshot was read but it contains no
+`remoteEntry` URL (`runtime-core/src/plugins/snapshot`).
+
+**Why:** the remote's manifest was produced in a mode that has no runtime entry, e.g.
+`experiments.hostProvidesAllShared` (import-map mode emits a manifest **without** `remoteEntry`),
+or `metaData.remoteEntry` was stripped by `additionalData` or a deploy step.
+
+**Fix:** build the remote with a normal `filename`, or switch the host to the same
+import-map mode. Check the manifest:
+
+```js
+const m = await fetch('https://shell-a.example.com/mf-manifest.json').then((r) => r.json())
+console.log(m.metaData?.remoteEntry)   // { name: 'remoteEntry.js', path: '', type: 'module' }
+```
+
+**Watch out for:** a manifest from one build and a `remoteEntry.js` from another (partial deploy).
+Deploy each remote's `dist/` atomically.
+
+---
+
+#### RUNTIME-012: The getter for the shared module is not a function
+
+```
+The getter for the shared module is not a function. This may be caused by setting
+"shared.import: false" without the host providing the corresponding lib. #RUNTIME-012
+```
+
+**When it happens:** step 6, when a container asks for a shared package that was configured
+**without a local fallback** (`import: false`) and no other container on the page provided it.
+(The check lives in the bundler runtime. In this Vite version a missing provider can also show
+up as `loadShare` returning `false` and the import resolving to `undefined`.)
+
+**Why:** with `import: false` the container promises "someone else will give me this package".
+If that someone isn't loaded (a remote running **standalone**, or the providing host doesn't
+list the package in its `shared`), there is nothing to call.
+
+**Reproduce:**
+
+```js
+// remote
+shared: { vue: { singleton: true, import: false } }
+// open the remote standalone at http://localhost:8081 → no host provides vue
+```
+
+**Fix:**
+
+```js
+// 1. keep a fallback (default, what this repo does): remotes can run standalone
+shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } }
+
+// 2. or make sure the provider lists it too (host)
+shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } }
+```
+
+**Watch out for:** `import: false` is only safe when the remote is **never** opened standalone
+and the host **always** loads first. Silence its build warning only on purpose
+(`suppressMissingImportWarning`).
+
+---
+
+#### RUNTIME-013: The manifest is not a valid Module Federation manifest
+
+```
+[ Federation Runtime ]: The manifest is not a valid Module Federation manifest. #RUNTIME-013
+args: {"manifestUrl":"…/mf-manifest.json","moduleName":"shellA","hostName":"host","missingFields":"metaData,exposes,shared"}
+```
+
+**When it happens:** step 2, after the manifest downloaded and parsed as JSON, but it misses
+`metaData`, `exposes` or `shared` (the `missingFields` arg tells you which).
+
+**Why:** the URL returns some other JSON: `package.json`, a Vite `manifest.json`
+(`build.manifest`, a different format), `mf-stats.json`, an API error object
+(`{"message":"Unauthorized"}`), or a manifest from an incompatible tool.
+
+**Fix:** point `entry` at the file named by the remote's `manifest.fileName` (default
+`mf-manifest.json`), not at Vite's `.vite/manifest.json` or `mf-stats.json`. Check:
+
+```js
+const m = await fetch(url).then((r) => r.json())
+console.log(Object.keys(m))   // id, name, metaData, shared, remotes, exposes
+```
+
+**Watch out for:** `manifest.additionalData` must return the **whole** manifest (spread the
+original). Returning only your extra fields produces a 013.
+
+---
+
+#### RUNTIME-014: The remote does not expose the requested module
+
+```
+[ Federation Runtime ]: The remote does not expose the requested module. #RUNTIME-014
+args: {"hostName":"host","remoteName":"shellA","remoteEntryUrl":"…/remoteEntry.js","expose":"./Cart","requestId":"shellA/Cart","availableExposes":["./App"]}
+```
+
+**When it happens:** step 5, `container.get('./Cart')` returned nothing.
+
+**Why:**
+- The key isn't in the remote's `exposes` (typo, case: `./app` vs `./App`).
+- The remote deployed in this environment is **older/newer** than the code that imports it.
+- The host's dev server still has an old remote cached.
+
+**Diagnose:** `availableExposes` lists what the remote offers (when a snapshot is available).
+Otherwise:
+
+```js
+const c = await import('http://localhost:8081/remoteEntry.js')
+await c.init?.({})          // only for inspection in a scratch page
+await c.get('./App')        // works → the expose exists; try './Cart'
+```
+
+**Fix:** align both sides. In this repo the keys live in `apps/shell-*/shared.federation.json`:
+
+```json
+"exposes": { "./App": "./src/expose/App.mjs", "./Cart": "./src/expose/Cart.mjs" }
+```
+
+```js
+const Cart = defineRemoteComponent(() => import('shellA/Cart'))
+```
+
+**Watch out for:** removing or renaming an expose is a **breaking change** for every host.
+Keep old keys as aliases for one release, and deploy remotes before hosts.
+
+---
+
+#### RUNTIME-015: Remote container initialization failed
+
+```
+[ Federation Runtime ]: Remote container initialization failed. #RUNTIME-015
+args: {"hostName":"host","remoteName":"shellA","remoteEntryUrl":"…/remoteEntry.js","remoteEntryKey":"shellA","shareScope":"default"}
+Original Error Message:
+ Error: …the remote's own error…
+```
+
+**When it happens:** step 4, `remoteEntry.init(shareScope)` **threw**. The `Original Error Message`
+is the remote's error.
+
+**Why:**
+- The remote's own federation setup failed while initialising: one of **its** remotes (here
+  `host/ui-dev` for shell-a/shell-b) couldn't be loaded, so the error cascades.
+- Shared dependency negotiation failed: `strictVersion: true` with an incompatible
+  `requiredVersion` (e.g. remote wants `vue ^3.6`, host provides 3.5).
+- Different `@module-federation/vite` / runtime versions between host and remote (different
+  share scope formats).
+- `shareScope` names don't match (`'default'` vs a custom scope).
+
+**Diagnose:**
+1. Read `Original Error Message`.
+2. Open the remote **standalone** (`http://localhost:8081`). Its own console shows the root error.
+3. Compare versions:
+
+```bash
+npm ls vue @module-federation/vite --all   # one version each across apps
+```
+
+```js
+__FEDERATION__.__SHARE__   // which versions of vue each container registered
+```
+
+**Fix:**
+
+```js
+// same requirement everywhere, no strictVersion unless you need it
+shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } }
+
+// same share scope on both sides (default unless you have a reason)
+shellA: { type: 'module', name: 'shellA', entry, shareScope: 'default' }
+```
+
+Keep one lockfile (npm workspaces) so every app resolves the same plugin and runtime versions.
+
+**Watch out for:** a 015 in the **host** is often a 008 inside the **remote** (the remote
+couldn't reach its own remote). Fix the inner error first.
+
+---
+
+### 7.5 One plugin to log every federation error with context
+
+Use it in development to see every failure with the phase it happened in.
+
+```js
+// src/mf/error-reporter.mjs   →   runtimePlugins: ['./src/mf/error-reporter.mjs']
+export default () => ({
+  name: 'error-reporter',
+  errorLoadRemote({ id, error, lifecycle, from }) {
+    console.groupCollapsed(`%c[mf] ${id} failed in ${lifecycle} (${from})`, 'color:#c00')
+    console.error(error)
+    console.groupEnd()
+    // send to your monitoring here
+    // returning nothing re-throws; return a module to recover (see §6.4)
+  },
+  errorLoadShare({ pkgName, error }) {
+    console.error(`[mf] shared "${pkgName}" failed`, error)
+  },
+  loadEntryError({ remoteInfo }) {
+    console.warn(`[mf] entry failed for ${remoteInfo.name}: ${remoteInfo.entry}`)
+  },
+})
+```
+
+`lifecycle` values: `beforeRequest` (before matching, e.g. 004), `afterResolve` (manifest, e.g.
+003/013), `onLoad` (entry, init, expose: 008/001/002/015/014), `beforeLoadShare` (shared deps).
+
+### 7.6 Type and build codes
+
+#### TYPE-001: Failed to generate type declaration
 
 **Cause:** `dts` is enabled but there's no valid `tsconfig.json` (this repo is plain JS).
 **Fix:** set `dts: false` (done in every app), or add a `tsconfig.json` if you move to TS.
 
-### BUILD-001: Failed to find expose module
+#### BUILD-001: Failed to find expose module
 
 **Cause:** an `exposes` value points to a file that doesn't exist.
 **Fix:** paths are relative to the app root, e.g. `./src/expose/App.mjs`. Check the extension
 (`.mjs` vs `.js`).
 
-### BUILD-002: PublicPath is required in prod mode
+#### BUILD-002: PublicPath is required in prod mode
 
 **Cause:** production build without a usable public path.
 **Fix:** set an absolute Vite `base` (this repo: `VITE_PUBLIC_URL`) or the `publicPath` option.

@@ -25,7 +25,8 @@
     "clean": "rm -rf apps/*/dist apps/*/node_modules/.vite apps/*/.__mf__temp",
     "docs:build": "node scripts/build-docs.mjs",
     "docs": "node scripts/build-docs.mjs && vite docs/site --port 5050 --open",
-    "check:env": "node scripts/check-env.mjs"
+    "check:env": "node scripts/check-env.mjs",
+    "mf:errors": "node scripts/mf-errors-demo.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",
