@@ -84,6 +84,10 @@ would not find this remote's store. `provide(shellBStoreKey, store)` in the root
 So: scoped styles only, a root class (`.shell-b`) on the root element, and no global selectors
 (`body`, `#app`) in `.vue`/`.scss` files. Standalone-only styles go inline in `index.html`.
 
+## API gateway key + mock API
+
+This app's axios instance (`src/services/http.mjs`) sends `x-api-gateway-key: $VITE_API_GATEWAY_KEY` on every request. The key is unique to **shell-b** and to each `.env.[mode]`. The mock API (`src/services/mock/`) serves `GET /todos`, `POST /todos` and returns 401 unless the header equals `VITE_MOCK_GATEWAY_KEY`. Run `npm run check:env` at the root to verify. Details: [ENVIRONMENTS.md](../../ENVIRONMENTS.md#api-gateway-keys-and-the-mock-api).
+
 ## Env files
 
 | File | `VITE_PUBLIC_URL` |

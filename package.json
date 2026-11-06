@@ -11,10 +11,12 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
+    "predev": "node scripts/check-env.mjs",
     "dev": "concurrently -k -n host,shell-a,shell-b -c blue,green,magenta \"npm:dev:host\" \"npm:dev:shell-a\" \"npm:dev:shell-b\"",
     "dev:host": "npm run dev -w @mfe/host",
     "dev:shell-a": "npm run dev -w @mfe/shell-a",
     "dev:shell-b": "npm run dev -w @mfe/shell-b",
+    "prebuild": "node scripts/check-env.mjs",
     "build": "npm run build -w @mfe/shell-a && npm run build -w @mfe/shell-b && npm run build -w @mfe/host",
     "build:staging": "npm run build:staging -w @mfe/shell-a && npm run build:staging -w @mfe/shell-b && npm run build:staging -w @mfe/host",
     "build:localprod": "npm run build:localprod -w @mfe/shell-a && npm run build:localprod -w @mfe/shell-b && npm run build:localprod -w @mfe/host",
@@ -22,7 +24,8 @@
     "start": "npm run build:localprod && npm run preview",
     "clean": "rm -rf apps/*/dist apps/*/node_modules/.vite apps/*/.__mf__temp",
     "docs:build": "node scripts/build-docs.mjs",
-    "docs": "node scripts/build-docs.mjs && vite docs/site --port 5050 --open"
+    "docs": "node scripts/build-docs.mjs && vite docs/site --port 5050 --open",
+    "check:env": "node scripts/check-env.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.2.0",

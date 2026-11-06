@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { AUTH_STORAGE_KEY } from '@/utils/mfeBus'
+import { GATEWAY_HEADER, GATEWAY_KEY } from './gateway'
 
 /**
  * SHELL-B axios instance (private to this micro-frontend).
@@ -7,12 +8,16 @@ import { AUTH_STORAGE_KEY } from '@/utils/mfeBus'
  * - Own baseURL / timeout / headers / interceptors.
  * - Not shared through Module Federation: axios is NOT in `shared`, so this
  *   remote bundles its own copy and nothing the host configures can leak in.
+ * - Sends THIS remote's own API gateway key (VITE_API_GATEWAY_KEY) on every request.
  * - Auth contract: reads the token the host writes to sessionStorage[AUTH_STORAGE_KEY].
  */
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 10_000,
-  headers: { 'X-Client-App': import.meta.env.VITE_APP_NAME },
+  headers: {
+    'X-Client-App': import.meta.env.VITE_APP_NAME,
+    [GATEWAY_HEADER]: GATEWAY_KEY,
+  },
 })
 
 http.interceptors.request.use((config) => {

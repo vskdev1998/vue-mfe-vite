@@ -20,7 +20,8 @@ A complete, working **Vue 3 + Vite 7 micro-frontend** monorepo built with **Modu
 - **Critical CSS inline in each `index.html`** (background + boot splash before JS loads)
 - **Auto import**: `unplugin-auto-import` (vue, vuex, vue-router, own composables) and `unplugin-vue-components` (no manual component registration)
 - **Vuex 4: one independent store per app**, each installed/provided under its own injection key
-- **axios: one private instance per app** (own baseURL, timeout, interceptors) and **not shared** through federation
+- **axios: one private instance per app** (own baseURL, timeout, interceptors, **own API gateway key**) and **not shared** through federation
+- **Mock API with gateway-key verification** (axios adapter): host login, shell-a products, shell-b todos. `npm run check:env` verifies keys for every app and mode
 - **Sample login** in the host (route guard, session in `sessionStorage`)
 - Cross-app communication with a tiny `window` CustomEvent bus (`mfe:*`) instead of shared state
 - Per-app env files for **development / localprod / staging / production**
@@ -58,6 +59,7 @@ npm run start        # = build:localprod (all apps) + vite preview on 8080/8081/
 | `npm run start` | `build:localprod` + `preview` |
 | `npm run docs` | Build the docs site and serve it on :5050 |
 | `npm run docs:build` | Regenerate `docs/site/index.html` from the Markdown |
+| `npm run check:env` | Verify every app × mode env file: required keys, unique gateway keys, mock key matches (runs before dev/build) |
 | `npm run clean` | Remove `dist/` and federation temp folders |
 
 ## Repository layout

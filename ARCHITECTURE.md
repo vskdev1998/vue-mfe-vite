@@ -116,6 +116,10 @@ All modules are `namespaced: true`.
 | shell-a | `https://dummyjson.com` | 8s | `X-Client-App: shell-a` |
 | shell-b | `https://jsonplaceholder.typicode.com` | 8s | `X-Client-App: shell-b` |
 
+Every instance also sends **its own API gateway key** (`x-api-gateway-key`, different per app and per
+environment), and mock requests are answered by an axios adapter that verifies that key first.
+See [ENVIRONMENTS.md](ENVIRONMENTS.md#api-gateway-keys-and-the-mock-api).
+
 Interceptors are per instance. The global `axios` default instance is never configured,
 and axios is not in `shared`, so every bundle carries its own copy.
 

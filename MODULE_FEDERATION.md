@@ -537,6 +537,7 @@ versions across apps. Check `requiredVersion`/`strictVersion` of shared deps.
 | `GET http://localhost:5000/ 403 (Forbidden)` on macOS | macOS **AirPlay Receiver** listens on port 5000 (and 7000) and answers 403. | This repo uses 8080/8081/8082. Otherwise turn off System Settings → General → AirDrop & Handoff → AirPlay Receiver. |
 | `Port 8081 is already in use` | `strictPort: true`. | Free the port or change `VITE_PORT` **and** the URLs that point to it. |
 | `[app] missing env for mode "x"` | A required key is absent in `.env.x`. | Add it (see `.env.example`). |
+| `[mock:host] invalid API gateway key for this app` (401) | `VITE_MOCK_GATEWAY_KEY` ≠ `VITE_API_GATEWAY_KEY` in that app's `.env.[mode]` (or a `.local` override). | Make them equal; run `npm run check:env`. |
 | `[federation] "x" is shared but not in package.json` | `shared.federation.json` lists an uninstalled package. | Install it or remove it from `shared`. |
 
 ---

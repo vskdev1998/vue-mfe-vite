@@ -1,28 +1,26 @@
 import { http } from './http'
-import { PRODUCTS } from './fixtures/products'
+import { shellAMockAdapter } from './mock/routes'
 
 const FIELDS = 'id,title,price,thumbnail,category,rating'
 const forceMock = import.meta.env.VITE_USE_MOCK_API === 'true'
 
-function fromFixtures(q, limit, skip) {
-  const term = q.toLowerCase()
-  const all = PRODUCTS.filter((p) => !term || `${p.title} ${p.category}`.toLowerCase().includes(term))
-  return { products: all.slice(skip, skip + limit), total: all.length, skip, limit, offline: true }
-}
-
 export const productService = {
+  /**
+   * Real API: dummyjson. Mock: same request through the same axios instance,
+   * answered by the mock adapter after it verified shell-a's gateway key.
+   * If the real API is unreachable (offline / proxy) we fall back to the mock.
+   */
   async list({ q = '', limit = 12, skip = 0 } = {}) {
-    if (forceMock) return fromFixtures(q, limit, skip)
+    const url = q ? '/products/search' : '/products'
+    const config = { params: { q: q || undefined, limit, skip, select: FIELDS } }
     try {
-      const url = q ? '/products/search' : '/products'
-      const { data } = await http.get(url, {
-        params: { q: q || undefined, limit, skip, select: FIELDS },
-      })
-      return data // { products, total, skip, limit }
+      const { data } = await http.get(url, forceMock ? { ...config, adapter: shellAMockAdapter } : config)
+      return data
     } catch (err) {
-      if (!err.isNetworkError) throw err
-      console.warn('[shell-a] API unreachable, using offline fixtures:', err.message)
-      return fromFixtures(q, limit, skip)
+      if (forceMock || !err.isNetworkError) throw err
+      console.warn('[shell-a] API unreachable, using mock API:', err.message)
+      const { data } = await http.get(url, { ...config, adapter: shellAMockAdapter })
+      return data
     }
   },
 }

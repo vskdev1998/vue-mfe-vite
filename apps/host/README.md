@@ -67,7 +67,7 @@ there. The host's federation options stay inline in `vite.config.mjs`; only the 
 
 | `VITE_USE_MOCK_AUTH` | Credentials | Behaviour |
 | --- | --- | --- |
-| `true` (dev default) | `demo / demo123`, `guest / guest123` | In-browser mock, 500 ms delay |
+| `true` (dev default) | `demo / demo123`, `guest / guest123` | `POST /auth/login` through the host axios instance, answered by the mock adapter after it verified the host's gateway key |
 | `false` | `emilys / emilyspass` | `POST https://dummyjson.com/auth/login` with the host axios instance |
 
 The session is stored in `sessionStorage['mfe.auth']`; the remotes' own axios instances read
@@ -79,6 +79,10 @@ the token from there. Logout clears it and broadcasts `mfe:auth-changed`.
 2. Add it to `REMOTE_ENV` and `remotes` in `vite.config.mjs`, and add the remote's origin to `VITE_CORS_ORIGINS`.
 3. Create `src/views/ShellCView.vue` with `defineRemoteComponent(() => import('shellC/App'), 'Shell C')`.
 4. Add a route and a header link.
+
+## API gateway key + mock API
+
+This app's axios instance (`src/services/http.mjs`) sends `x-api-gateway-key: $VITE_API_GATEWAY_KEY` on every request. The key is unique to **host** and to each `.env.[mode]`. The mock API (`src/services/mock/`) serves `POST /auth/login` and returns 401 unless the header equals `VITE_MOCK_GATEWAY_KEY`. Run `npm run check:env` at the root to verify. Details: [ENVIRONMENTS.md](../../ENVIRONMENTS.md#api-gateway-keys-and-the-mock-api).
 
 ## Env files
 

@@ -81,6 +81,68 @@ The host also uses an absolute `base` in builds, because it is a remote too (it 
 CORS lists. Every app's `preview` script is therefore `vite preview --mode localprod`, which
 matches `npm run build:localprod` (and `npm run start` runs both).
 
+## API gateway keys and the mock API
+
+Every app sends **its own** API gateway key on **every** request, from its own axios instance:
+
+```js
+// apps/*/src/services/http.mjs
+axios.create({
+  headers: { [GATEWAY_HEADER]: GATEWAY_KEY },   // x-api-gateway-key: gw_shella_dev_…
+})
+```
+
+| App | development | localprod | staging | production |
+| --- | --- | --- | --- | --- |
+| host | `gw_host_dev_…` | `gw_host_lp_…` | `gw_host_stg_…` | `gw_host_prod_…` |
+| shell-a | `gw_shella_dev_…` | `gw_shella_lp_…` | `gw_shella_stg_…` | `gw_shella_prod_…` |
+| shell-b | `gw_shellb_dev_…` | `gw_shellb_lp_…` | `gw_shellb_stg_…` | `gw_shellb_prod_…` |
+
+| Variable | Meaning |
+| --- | --- |
+| `VITE_API_GATEWAY_HEADER` | Header name (`x-api-gateway-key`) |
+| `VITE_API_GATEWAY_KEY` | This app's key for this environment. Different per app **and** per mode |
+| `VITE_MOCK_GATEWAY_KEY` | The key the built-in mock API accepts. Must equal `VITE_API_GATEWAY_KEY` |
+
+> These keys **identify the calling app**; they are not secrets. Every `VITE_*` value is
+> compiled into the browser bundle. Real secrets belong on the server / gateway.
+
+### Mock API verification
+
+The mock API is an **axios adapter** (`src/services/mock/adapter.mjs`), so mock requests go
+through the same axios instance, interceptors and headers as real ones. Before routing, it
+checks the gateway key like a real gateway would:
+
+| Request header | Result |
+| --- | --- |
+| missing | `401 [mock:<app>] missing x-api-gateway-key header` |
+| ≠ `VITE_MOCK_GATEWAY_KEY` | `401 [mock:<app>] invalid API gateway key for this app` |
+| matches | the route handler runs (`src/services/mock/routes.mjs`) |
+
+Where the mock is used:
+
+| App | When | Routes |
+| --- | --- | --- |
+| host | `VITE_USE_MOCK_AUTH=true` (login) | `POST /auth/login` (demo / demo123, guest / guest123) |
+| shell-a | `VITE_USE_MOCK_API=true`, or the real API is unreachable | `GET /products`, `GET /products/search` |
+| shell-b | `VITE_USE_MOCK_API=true`, or the real API is unreachable | `GET /todos`, `POST /todos` |
+
+Try the 401: put `VITE_MOCK_GATEWAY_KEY=wrong` in `apps/host/.env.development.local`, restart,
+and sign in. The login card shows `[mock:host] invalid API gateway key for this app`.
+
+### Verifying all env files: `npm run check:env`
+
+`scripts/check-env.mjs` loads every app × mode and fails (exit 1) when:
+
+- a required key is missing (incl. `VITE_API_GATEWAY_*`, `VITE_MOCK_GATEWAY_KEY`)
+- two apps share a gateway key in the same mode, or one app reuses a key across modes
+- `VITE_MOCK_GATEWAY_KEY ≠ VITE_API_GATEWAY_KEY`
+- a key doesn't match `gw_<app>_<env>_<16 hex>`, or a URL isn't absolute
+
+It runs automatically before `npm run dev` and `npm run build` (`predev` / `prebuild`), and
+prints a table of app, mode, port, masked key and mock status. Each app's
+`config/env.mjs` also prints the masked key on start and warns on a mismatch.
+
 ## Deploying to real environments
 
 1. Replace `example.com` URLs in `.env.staging` / `.env.production` of all three apps.

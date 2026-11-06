@@ -10,7 +10,17 @@
  */
 import { loadEnv } from 'vite'
 
-const REQUIRED = ['VITE_APP_NAME', 'VITE_PORT', 'VITE_PUBLIC_URL', 'VITE_API_BASE_URL']
+const REQUIRED = [
+  'VITE_APP_NAME',
+  'VITE_PORT',
+  'VITE_PUBLIC_URL',
+  'VITE_API_BASE_URL',
+  'VITE_API_GATEWAY_HEADER',
+  'VITE_API_GATEWAY_KEY',
+  'VITE_MOCK_GATEWAY_KEY',
+]
+
+const mask = (k = '') => (k.length > 12 ? `${k.slice(0, k.length - 12)}…${k.slice(-4)}` : '(missing)')
 
 const bool = (v, fallback = false) => (v === undefined || v === '' ? fallback : v === 'true')
 const list = (v) => (v ? v.split(',').map((s) => s.trim()).filter(Boolean) : [])
@@ -34,6 +44,16 @@ export function readEnv(mode, root = process.cwd(), extra = []) {
     )
   }
 
+  // The mock API only accepts VITE_MOCK_GATEWAY_KEY. A mismatch is allowed (handy to test
+  // the 401 path) but we say so loudly. `npm run check:env` treats it as an error.
+  const gatewayMismatch = raw.VITE_MOCK_GATEWAY_KEY !== raw.VITE_API_GATEWAY_KEY
+  if (gatewayMismatch) {
+    console.warn(
+      `\x1b[33m[${raw.VITE_APP_NAME}] VITE_MOCK_GATEWAY_KEY does not match VITE_API_GATEWAY_KEY in .env.${mode}: ` +
+        `the mock API will reject every request with 401.\x1b[0m`,
+    )
+  }
+
   const publicUrl = raw.VITE_PUBLIC_URL.endsWith('/') ? raw.VITE_PUBLIC_URL : `${raw.VITE_PUBLIC_URL}/`
 
   return {
@@ -48,6 +68,12 @@ export function readEnv(mode, root = process.cwd(), extra = []) {
     origin: trimSlash(publicUrl),
     apiBaseUrl: raw.VITE_API_BASE_URL,
     corsOrigins: list(raw.VITE_CORS_ORIGINS),
+    gateway: {
+      header: raw.VITE_API_GATEWAY_HEADER,
+      key: raw.VITE_API_GATEWAY_KEY,
+      masked: mask(raw.VITE_API_GATEWAY_KEY),
+      mockMatches: !gatewayMismatch,
+    },
     // server.allowedHosts / preview.allowedHosts (Vite blocks unknown Host headers)
     allowedHosts: hosts(raw.VITE_ALLOWED_HOSTS),
     // custom build entry + output layout
@@ -69,6 +95,7 @@ export function envBanner(env, remotes = {}) {
         app: `${env.appName} (${env.appEnv})`,
         url: env.publicUrl,
         api: env.apiBaseUrl,
+        gateway: `${env.gateway.header}: ${env.gateway.masked} (mock ${env.gateway.mockMatches ? 'ok' : 'MISMATCH'})`,
         ...Object.fromEntries(Object.entries(remotes).map(([k, v]) => [`remote:${k}`, v])),
         entry: `${env.buildEntry} → ${env.outDir}/`,
         allowedHosts: Array.isArray(env.allowedHosts) ? env.allowedHosts.join(', ') || '(localhost only)' : 'any',
