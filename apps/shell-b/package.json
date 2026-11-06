@@ -9,7 +9,7 @@
     "build": "vite build",
     "build:staging": "vite build --mode staging",
     "build:localprod": "vite build --mode localprod",
-    "preview": "vite preview"
+    "preview": "vite preview --mode localprod"
   },
   "dependencies": {
     "axios": "^1.13.0",

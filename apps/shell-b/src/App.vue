@@ -41,6 +41,10 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .shell-b {
+  // Theme the shared ui-dev components for this micro-frontend
+  --ui-primary: #{$accent};
+  --ui-border: #{$border};
+  --ui-text: #{$text};
   color: $text;
 
   &__header {

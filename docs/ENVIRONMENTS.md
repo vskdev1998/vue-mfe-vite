@@ -18,32 +18,50 @@ shell environment variables.
 > Only variables prefixed with `VITE_` reach browser code (`import.meta.env.VITE_*`).
 > Never put secrets in these files: everything `VITE_*` ends up in the JS bundle.
 
+All values are loaded by each app's `config/env.mjs` and used in `vite.config.mjs`
+(see [How vite.config.mjs is built](VITE_CONFIG.md)).
+
+## Variables used by every app
+
+| Variable | development | localprod | staging | production | Used for |
+| --- | --- | --- | --- | --- | --- |
+| `VITE_APP_NAME` | (in `.env`) | | | | `X-Client-App` header, `__APP_NAME__` |
+| `VITE_PORT` | 5000 / 5001 / 5002 (in `.env`) | | | | `server.port`, `preview.port` |
+| `VITE_DEV_HOST` | localhost (in `.env`) | | | | `server.host` |
+| `VITE_APP_ENV` | development | localprod | staging | production | `__APP_ENV__` |
+| `VITE_PUBLIC_URL` | http://localhost:500x/ | http://localhost:500x/ | https://…staging.example.com/ | https://….example.com/ | dev `server.origin`, build `base` |
+| `VITE_OPEN` | false | false | false | false | `server.open` |
+| `VITE_SOURCEMAP` | true | true | true | false | `build.sourcemap` |
+| `VITE_DROP_CONSOLE` | false | true | false | true | strip `console.log/debug` + `debugger` |
+| `VITE_CORS_ORIGINS` | see below | | | | `server.cors` / `preview.cors` |
+| `VITE_API_TIMEOUT` | 10000 host / 8000 remotes (in `.env`) | | | | axios timeout |
+
 ## Host (`apps/host`)
 
-| Variable | development | localprod | staging | production |
-| --- | --- | --- | --- | --- |
-| `VITE_APP_NAME` | host | host | host | host |
-| `VITE_PORT` | 5000 | 5000 | 5000 | 5000 |
-| `VITE_PUBLIC_URL` | http://localhost:5000/ | http://localhost:5000/ | https://staging.example.com/ | https://app.example.com/ |
-| `VITE_API_BASE_URL` | https://dummyjson.com | https://dummyjson.com | https://api.staging.example.com | https://api.example.com |
-| `VITE_SHELL_A_ENTRY` | http://localhost:5001/remoteEntry.js | same | https://shell-a.staging.example.com/remoteEntry.js | https://shell-a.example.com/remoteEntry.js |
-| `VITE_SHELL_B_ENTRY` | http://localhost:5002/remoteEntry.js | same | https://shell-b.staging.example.com/remoteEntry.js | https://shell-b.example.com/remoteEntry.js |
-| `VITE_USE_MOCK_AUTH` | true | true | false | false |
-| `VITE_API_TIMEOUT` | 10000 (from `.env`) | | | |
+| Variable | development / localprod | staging | production |
+| --- | --- | --- | --- |
+| `VITE_PUBLIC_URL` | http://localhost:5000/ | https://staging.example.com/ | https://app.example.com/ |
+| `VITE_CORS_ORIGINS` (who may load `host/ui-dev`) | http://localhost:5001,http://localhost:5002 | https://shell-a.staging.example.com,https://shell-b.staging.example.com | https://shell-a.example.com,https://shell-b.example.com |
+| `VITE_SHELL_A_ENTRY` | http://localhost:5001/remoteEntry.js | https://shell-a.staging.example.com/remoteEntry.js | https://shell-a.example.com/remoteEntry.js |
+| `VITE_SHELL_B_ENTRY` | http://localhost:5002/remoteEntry.js | https://shell-b.staging.example.com/remoteEntry.js | https://shell-b.example.com/remoteEntry.js |
+| `VITE_API_BASE_URL` | https://dummyjson.com | https://api.staging.example.com | https://api.example.com |
+| `VITE_USE_MOCK_AUTH` | true | false | false |
 
-`vite.config.js` reads `VITE_SHELL_*_ENTRY` with `loadEnv()` and **fails the build** if one is
-missing for the current mode.
+`config/env.mjs` **stops the dev server or build** if `VITE_SHELL_A_ENTRY` / `VITE_SHELL_B_ENTRY`
+(or any required key) is missing for the current mode.
 
 ## Remotes (`apps/shell-a`, `apps/shell-b`)
 
-| Variable | development | localprod | staging | production |
-| --- | --- | --- | --- | --- |
-| `VITE_PORT` | 5001 / 5002 | same | same | same |
-| `VITE_PUBLIC_URL` | http://localhost:500x/ | http://localhost:500x/ | https://shell-x.staging.example.com/ | https://shell-x.example.com/ |
-| `VITE_API_BASE_URL` | dummyjson (A) / jsonplaceholder (B) | same | same | same |
-| `VITE_HOST_URL` | http://localhost:5000/ | same | https://staging.example.com/ | https://app.example.com/ |
-| `VITE_USE_MOCK_API` | false | false | false | false |
-| `VITE_API_TIMEOUT` | 8000 (from `.env`) | | | |
+| Variable | development / localprod | staging | production |
+| --- | --- | --- | --- |
+| `VITE_PUBLIC_URL` | http://localhost:500x/ | https://shell-x.staging.example.com/ | https://shell-x.example.com/ |
+| `VITE_CORS_ORIGINS` (who may load this remote) | http://localhost:5000 | https://staging.example.com | https://app.example.com |
+| `VITE_HOST_URL` | http://localhost:5000/ | https://staging.example.com/ | https://app.example.com/ |
+| `VITE_HOST_ENTRY` (where `host/ui-dev` comes from) | http://localhost:5000/remoteEntry.js | https://staging.example.com/remoteEntry.js | https://app.example.com/remoteEntry.js |
+| `VITE_API_BASE_URL` | dummyjson (A) / jsonplaceholder (B) | same | same |
+| `VITE_USE_MOCK_API` | false | false | false |
+
+`VITE_HOST_ENTRY` is the env key named in `shared.federation.json` → `remotes.host.entryEnv`.
 
 `VITE_PUBLIC_URL` is the most important remote variable:
 
@@ -52,13 +70,21 @@ missing for the current mode.
 - **build**: becomes Vite's `base`. `remoteEntry.js` imports its chunks relative to this URL.
   If it's wrong, the host loads `remoteEntry.js` and then 404s on every chunk.
 
+The host also uses an absolute `base` in builds, because it is a remote too (it serves `ui-dev`).
+
+## `npm run preview` uses `localprod`
+
+`vite preview` defaults to mode `production`, which would load the `example.com` URLs and
+CORS lists. Every app's `preview` script is therefore `vite preview --mode localprod`, which
+matches `npm run build:localprod` (and `npm run start` runs both).
+
 ## Deploying to real environments
 
 1. Replace `example.com` URLs in `.env.staging` / `.env.production` of all three apps.
 2. Build and deploy the **remotes first** (`npm run build:staging -w @mfe/shell-a`, …).
-3. Build and deploy the host.
-4. Remotes must send CORS headers allowing the host origin for `remoteEntry.js` and chunks
-   (`Access-Control-Allow-Origin`), or be served from the same domain under different paths,
+3. Build and deploy the host. Changes to `ui-dev` must stay backwards compatible, because the already-deployed remotes load it from the host.
+4. Every app must send CORS headers for the apps that load it (remotes → host origin, host → remote origins for `ui-dev`; see `VITE_CORS_ORIGINS`) for `remoteEntry.js` and chunks
+   (`Access-Control-Allow-Origin`), or all apps can be served from the same domain under different paths,
    e.g. `https://app.example.com/mfe/shell-a/` (then use that as `VITE_PUBLIC_URL`).
 5. Serve `remoteEntry.js` with `Cache-Control: no-cache`; hashed chunks can be cached forever.
 

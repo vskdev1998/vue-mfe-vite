@@ -7,18 +7,18 @@ const counts = computed(() => store.getters['tasks/counts'])
 
 <template>
   <div class="filters" role="tablist" aria-label="Filter tasks">
-    <button
+    <UiButton
       v-for="f in filters"
       :key="f"
-      type="button"
       role="tab"
+      size="sm"
       :aria-selected="active === f"
+      :variant="active === f ? 'primary' : 'ghost'"
       class="filters__btn"
-      :class="{ 'filters__btn--active': active === f }"
       @click="store.commit('tasks/SET_FILTER', f)"
     >
-      {{ f }} <span>{{ counts[f] }}</span>
-    </button>
+      {{ f }} <UiBadge :tone="active === f ? 'neutral' : 'primary'">{{ counts[f] }}</UiBadge>
+    </UiButton>
   </div>
 </template>
 
@@ -29,28 +29,8 @@ const counts = computed(() => store.getters['tasks/counts'])
   margin-bottom: 12px;
 
   &__btn {
-    padding: 6px 12px;
-    border: 1px solid $border;
-    border-radius: 999px;
-    background: $surface;
-    font: inherit;
     text-transform: capitalize;
-    cursor: pointer;
-
-    span {
-      color: $muted;
-      font-size: 12px;
-    }
-
-    &--active {
-      background: $accent;
-      border-color: $accent;
-      color: #fff;
-
-      span {
-        color: soft($accent, 60%);
-      }
-    }
+    border-radius: 999px;
   }
 }
 </style>

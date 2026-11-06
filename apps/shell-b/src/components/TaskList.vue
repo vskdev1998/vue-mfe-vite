@@ -6,10 +6,11 @@ const visible = computed(() => store.getters['tasks/visible'])
 
 <template>
   <div>
-    <p v-if="state.error" class="msg msg--error">
-      {{ state.error }} <button type="button" @click="store.dispatch('tasks/fetch')">Retry</button>
-    </p>
-    <p v-else-if="state.loading" class="msg">Loading tasks…</p>
+    <UiAlert v-if="state.error" tone="danger" title="Could not load tasks" class="msg">
+      {{ state.error }}
+      <UiButton size="sm" variant="ghost" @click="store.dispatch('tasks/fetch')">Retry</UiButton>
+    </UiAlert>
+    <p v-else-if="state.loading" class="msg"><UiSpinner size="18" /> Loading tasks…</p>
     <p v-else-if="!visible.length" class="msg">Nothing here.</p>
 
     <TransitionGroup tag="ul" name="list" class="list">
@@ -29,11 +30,10 @@ const visible = computed(() => store.getters['tasks/visible'])
 }
 
 .msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   color: $muted;
-
-  &--error {
-    color: #b91c1c;
-  }
 }
 
 .list-enter-active,

@@ -5,6 +5,8 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { store, hostStoreKey } from './store'
+// ui-dev design tokens (CSS variables). Remotes get them through host/ui-dev.
+import './ui-dev/styles/ui-dev.css'
 import './styles/main.scss'
 
 const app = createApp(App)

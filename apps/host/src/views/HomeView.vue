@@ -26,8 +26,9 @@ const lastEvent = computed(() => store.state.notifications.lastEvent)
       <li>Every app has its <strong>own Vuex store</strong> with its own injection key.</li>
       <li>Every app has its <strong>own axios instance</strong> (base URL, interceptors).</li>
       <li>
-        Only <code>vue</code> is shared (singleton) through federation. Cross-app data travels as
-        <code>mfe:*</code> window events.
+        Federation shares only <code>vue</code> (singleton) and the host's
+        <strong>ui-dev</strong> component library (<code>host/ui-dev</code>). Cross-app data
+        travels as <code>mfe:*</code> window events.
       </li>
     </ul>
 

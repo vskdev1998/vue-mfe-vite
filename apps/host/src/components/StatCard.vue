@@ -7,29 +7,25 @@ defineProps({
 </script>
 
 <template>
-  <component :is="to ? 'RouterLink' : 'div'" :to="to || undefined" class="stat-card">
+  <RouterLink v-if="to" :to="to" class="stat-card-link">
+    <UiCard interactive>
+      <span class="stat-card__label">{{ label }}</span>
+      <span class="stat-card__value">{{ value }}</span>
+    </UiCard>
+  </RouterLink>
+  <UiCard v-else>
     <span class="stat-card__label">{{ label }}</span>
     <span class="stat-card__value">{{ value }}</span>
-    <slot />
-  </component>
+  </UiCard>
 </template>
 
 <style lang="scss" scoped>
-.stat-card {
-  @include card;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 20px;
+.stat-card-link {
   color: inherit;
   text-decoration: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-  }
-
+.stat-card {
   &__label {
     color: $muted;
     font-size: 13px;

@@ -1,0 +1,27 @@
+{
+  "$comment": "Federation contract for shell-b. Read by vite.config.mjs (config/federation.mjs). Remote URLs come from .env.[mode] via entryEnv.",
+  "name": "shellB",
+  "filename": "remoteEntry.js",
+  "exposes": {
+    "./App": "./src/expose/App.mjs"
+  },
+  "remotes": {
+    "host": {
+      "type": "module",
+      "entryEnv": "VITE_HOST_ENTRY",
+      "$comment": "provides host/ui-dev"
+    }
+  },
+  "shared": {
+    "vue": {
+      "singleton": true,
+      "requiredVersion": "^3.5.0"
+    }
+  },
+  "notShared": {
+    "axios": "Private instance in src/services/http.mjs.",
+    "vuex": "Private store provided under its own key in src/App.vue."
+  },
+  "bundleAllCSS": true,
+  "shareStrategy": "loaded-first"
+}

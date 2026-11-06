@@ -179,7 +179,7 @@ code, pre, kbd { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Co
     <span>vue-mfe-vite <small>Developer docs</small></span>
   </a>
   <span class="topbar__spacer"></span>
-  <span class="chip">Vue 3.5 · Vite 7 · Module Federation</span>
+  <span class="chip">Vue 3.5 · Vite 7 · Module Federation · .mjs</span>
   <button class="icon-btn theme-btn" type="button" aria-label="Toggle dark mode">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
   </button>
@@ -193,7 +193,7 @@ code, pre, kbd { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Co
       <kbd>/</kbd>
     </div>
     <ul class="results" id="results" hidden></ul>
-    <nav><div class="nav__group"><p class="nav__label">Getting started</p><a class="nav__link" href="#/overview" data-page="overview">Overview</a></div><div class="nav__group"><p class="nav__label">Guides</p><a class="nav__link" href="#/architecture" data-page="architecture">Architecture</a><a class="nav__link" href="#/environments" data-page="environments">Environments</a><a class="nav__link" href="#/vite7" data-page="vite7">Vite 7 guide</a><a class="nav__link" href="#/migration" data-page="migration">webpack → Vite migration</a></div><div class="nav__group"><p class="nav__label">Apps</p><a class="nav__link" href="#/host" data-page="host">Host · :5000</a><a class="nav__link" href="#/shell-a" data-page="shell-a">Shell A · :5001</a><a class="nav__link" href="#/shell-b" data-page="shell-b">Shell B · :5002</a></div></nav>
+    <nav><div class="nav__group"><p class="nav__label">Getting started</p><a class="nav__link" href="#/overview" data-page="overview">Overview</a></div><div class="nav__group"><p class="nav__label">Guides</p><a class="nav__link" href="#/architecture" data-page="architecture">Architecture</a><a class="nav__link" href="#/vite-config" data-page="vite-config">vite.config.mjs + env</a><a class="nav__link" href="#/environments" data-page="environments">Environments</a><a class="nav__link" href="#/ui-dev" data-page="ui-dev">ui-dev UI library</a><a class="nav__link" href="#/vite7" data-page="vite7">Vite 7 guide</a><a class="nav__link" href="#/migration" data-page="migration">webpack → Vite migration</a></div><div class="nav__group"><p class="nav__label">Apps</p><a class="nav__link" href="#/host" data-page="host">Host · :5000</a><a class="nav__link" href="#/shell-a" data-page="shell-a">Shell A · :5001</a><a class="nav__link" href="#/shell-b" data-page="shell-b">Shell B · :5002</a></div></nav>
     <div class="sidebar__foot">v1.0.0 · generated 2026-11-06<br />Edit the Markdown, then <code>npm run docs:build</code></div>
   </aside>
   <div class="scrim"></div>
@@ -216,29 +216,33 @@ code, pre, kbd { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Co
 </thead>
 <tbody><tr>
 <td><a href="#/host"><code>apps/host</code></a></td>
-<td>Container: routing, <strong>login</strong>, layout, header</td>
+<td>Container: routing, <strong>login</strong>, layout, header, <strong>ui-dev library</strong></td>
 <td>5000</td>
-<td>consumes <code>shellA/App</code>, <code>shellB/App</code></td>
+<td>consumes <code>shellA/App</code>, <code>shellB/App</code>; exposes <code>./ui-dev</code></td>
 <td>green</td>
 </tr>
 <tr>
 <td><a href="#/shell-a"><code>apps/shell-a</code></a></td>
 <td>Remote: product catalog + cart</td>
 <td>5001</td>
-<td>exposes <code>./App</code></td>
+<td>exposes <code>./App</code>; consumes <code>host/ui-dev</code></td>
 <td>indigo</td>
 </tr>
 <tr>
 <td><a href="#/shell-b"><code>apps/shell-b</code></a></td>
 <td>Remote: task board</td>
 <td>5002</td>
-<td>exposes <code>./App</code></td>
+<td>exposes <code>./App</code>; consumes <code>host/ui-dev</code></td>
 <td>teal</td>
 </tr>
 </tbody></table>
 </div><h3 id="overview--whats-inside"><a class="anchor" href="#/overview/whats-inside" aria-label="Link to this section">#</a>What&#39;s inside</h3>
 <ul>
 <li><strong>Vite 7</strong> (<code>vite@^7.3</code>) with <code>@vitejs/plugin-vue@6</code></li>
+<li><strong>Plain JavaScript as <code>.mjs</code></strong> everywhere (configs, scripts, source). No TypeScript, no generated <code>.d.ts</code></li>
+<li><strong><code>vite.config.mjs</code> driven by <code>.env.[mode]</code></strong> through each app&#39;s <code>config/env.mjs</code> (ports, URLs, CORS, sourcemaps, remote entries)</li>
+<li><strong><code>shared.federation.json</code> in each remote</strong>: the federation contract (exposes, remotes, shared), turned into plugin options by <code>config/federation.mjs</code></li>
+<li><strong><code>ui-dev</code> shared UI library</strong> owned by the host and federated to the remotes as <code>host/ui-dev</code> (<code>&lt;UiButton&gt;</code>, <code>&lt;UiCard&gt;</code>, <code>&lt;UiInput&gt;</code>, …, auto-resolved, no imports)</li>
 <li><strong>Module Federation</strong> via <a href="https://module-federation.io/integrations/build-tool/vite" target="_blank" rel="noopener"><code>@module-federation/vite</code></a> (works in dev <em>and</em> build)</li>
 <li><strong>Sass</strong> (modern compiler API) with per-app design tokens injected through <code>additionalData</code></li>
 <li><strong>Critical CSS inline in each <code>index.html</code></strong> (background + boot splash before JS loads)</li>
@@ -288,7 +292,7 @@ npm run dev          # starts host :5000, shell-a :5001, shell-b :5002 together<
 </tr>
 <tr>
 <td><code>npm run preview</code></td>
-<td>Serve every <code>dist/</code> with <code>vite preview</code></td>
+<td>Serve every <code>dist/</code> with <code>vite preview --mode localprod</code></td>
 </tr>
 <tr>
 <td><code>npm run start</code></td>
@@ -309,34 +313,45 @@ npm run dev          # starts host :5000, shell-a :5001, shell-b :5002 together<
 </tbody></table>
 </div><h2 id="overview--repository-layout"><a class="anchor" href="#/overview/repository-layout" aria-label="Link to this section">#</a>Repository layout</h2>
 <div class="code"><div class="code__bar"><span>text</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-text">vue-mfe-vite/
-├─ package.json            # npm workspaces + orchestration scripts
-├─ scripts/                # build-docs.mjs + docs-template.html
+├─ package.json              # npm workspaces + orchestration scripts
+├─ scripts/                  # build-docs.mjs + docs-template.html
 ├─ docs/
-│  ├─ site/index.html     # generated developer docs site (open in a browser)
-│  ├─ ARCHITECTURE.md      # how host/remotes, stores, axios, events fit together
-│  ├─ ENVIRONMENTS.md      # every env file and variable, per app
-│  ├─ VITE7_GUIDE.md       # Vite 7 explained using this repo
+│  ├─ site/index.html        # generated developer docs site (open in a browser)
+│  ├─ ARCHITECTURE.md        # how host/remotes, stores, axios, events fit together
+│  ├─ VITE_CONFIG.md         # vite.config.mjs ← .env.[mode] + shared.federation.json
+│  ├─ UI_DEV_LIBRARY.md      # the shared ui-dev component library
+│  ├─ ENVIRONMENTS.md        # every env file and variable, per app
+│  ├─ VITE7_GUIDE.md         # Vite 7 explained using this repo
 │  └─ WEBPACK_TO_VITE_MIGRATION.md
 └─ apps/
-   ├─ host/                # :5000
-   ├─ shell-a/             # :5001
-   └─ shell-b/             # :5002
+   ├─ host/                  # :5000
+   │  ├─ vite.config.mjs     # federation options inline (exposes ./ui-dev)
+   │  └─ src/ui-dev/         # shared UI library (index.mjs, components/, styles/)
+   ├─ shell-a/               # :5001
+   └─ shell-b/               # :5002
       ├─ .env, .env.development, .env.localprod, .env.staging, .env.production, .env.example
-      ├─ index.html        # inline critical CSS
-      ├─ vite.config.js    # vue + auto-import + components + federation + sass
+      ├─ shared.federation.json   # (remotes only) name, exposes, remotes, shared
+      ├─ config/env.mjs           # loads + validates .env.[mode] for vite.config.mjs
+      ├─ config/federation.mjs    # (remotes) shared.federation.json → plugin options
+      ├─ jsconfig.json            # editor alias support (no TypeScript)
+      ├─ index.html               # inline critical CSS
+      ├─ vite.config.mjs          # vue + auto-import + components + federation + sass
       └─ src/
-         ├─ App.vue        # (remotes) exposed root component, provides its own store
-         ├─ main.js        # standalone bootstrap
-         ├─ components/    # auto-registered
-         ├─ composables/   # auto-imported (useShellAStore, useHostStore, …)
-         ├─ services/      # private axios instance + API services (+ fixtures)
-         ├─ store/         # private Vuex store + modules
-         ├─ styles/        # _tokens.scss (vars/mixins) + global styles
-         └─ utils/         # mfeBus.js (own copy in every app)</code></pre></div>
+         ├─ App.vue               # (remotes) root component, provides its own store
+         ├─ expose/App.mjs        # (remotes) federated entry: awaits host/ui-dev, re-exports App
+         ├─ main.mjs              # standalone bootstrap
+         ├─ components/           # auto-registered
+         ├─ composables/          # auto-imported (useShellAStore, useHostStore, …)
+         ├─ services/             # private axios instance + API services (+ fixtures)
+         ├─ store/                # private Vuex store + modules
+         ├─ styles/               # _tokens.scss (vars/mixins) + global styles
+         └─ utils/                # mfeBus.mjs (own copy in every app)</code></pre></div>
 <h2 id="overview--documentation"><a class="anchor" href="#/overview/documentation" aria-label="Link to this section">#</a>Documentation</h2>
 <p><strong>Developer docs site:</strong> open <a href="index.html"><code>docs/site/index.html</code></a> in a browser (works from disk), or run <code>npm run docs</code> to serve it at <a href="http://localhost:5050" target="_blank" rel="noopener">http://localhost:5050</a>. It is generated from the Markdown files below by <code>scripts/build-docs.mjs</code>; after editing any <code>.md</code>, run <code>npm run docs:build</code>.</p>
 <ul>
 <li><a href="#/architecture">Architecture</a></li>
+<li><a href="#/vite-config">How vite.config.mjs is built (env + shared.federation.json)</a></li>
+<li><a href="#/ui-dev">ui-dev shared UI library</a></li>
 <li><a href="#/environments">Environments &amp; env files</a></li>
 <li><a href="#/vite7">Vite 7 guide</a></li>
 <li><a href="#/migration">Migrating from webpack (Vue CLI / webpack 5 Module Federation) to Vite</a></li>
@@ -353,6 +368,14 @@ npm run dev          # starts host :5000, shell-a :5001, shell-b :5002 together<
 <tbody><tr>
 <td>&quot;Shell A is unavailable&quot; card in the host</td>
 <td>The remote isn&#39;t running. <code>npm run dev</code> at the root starts all apps. Check <code>VITE_SHELL_A_ENTRY</code>.</td>
+</tr>
+<tr>
+<td>Standalone remote shows nothing / <code>RUNTIME-008</code> for <code>:5000/remoteEntry.js</code></td>
+<td>Remotes load <code>host/ui-dev</code> from the host. Start the host too (<code>npm run dev</code> starts all three).</td>
+</tr>
+<tr>
+<td><code>missing env for mode &quot;…&quot;</code> on start</td>
+<td>Add the listed keys to <code>.env.[mode]</code> of that app (see <code>.env.example</code>).</td>
 </tr>
 <tr>
 <td>Port already in use</td>
@@ -384,7 +407,8 @@ npm run dev          # starts host :5000, shell-a :5001, shell-b :5002 together<
 │   /shell-a  ──► defineRemoteComponent(() =&gt; import('shellA/App'))            │
 │                 │  loads http://localhost:5001/remoteEntry.js at runtime     │
 │                 ▼                                                            │
-│   ┌──────────────────────────────┐   ┌──────────────────────────────┐        │
+│   EXPOSES host/ui-dev ◄──── &lt;Ui*&gt; components used by both remotes ───┐      │
+│   ┌──────────────────────────────┐   ┌──────────────────────────────┐ │      │
 │   │ SHELL-A  &lt;App :user/&gt;        │   │ SHELL-B  &lt;App :user/&gt;        │        │
 │   │ provide(shellAStoreKey)      │   │ provide(shellBStoreKey)      │        │
 │   │ Vuex: catalog, cart          │   │ Vuex: tasks                  │        │
@@ -394,38 +418,73 @@ npm run dev          # starts host :5000, shell-a :5001, shell-b :5002 together<
 │                  └──────────────► window ◄──────────┘                        │
 │                        host App.vue listens → notifications module          │
 └──────────────────────────────────────────────────────────────────────────────┘
-        shared via federation: vue (singleton) ONLY</code></pre></div>
+        shared via federation: vue (singleton) + host/ui-dev (exposed module)</code></pre></div>
 <h2 id="architecture--1-module-federation"><a class="anchor" href="#/architecture/1-module-federation" aria-label="Link to this section">#</a>1. Module Federation</h2>
 <p>Plugin: <code>@module-federation/vite</code> (Module Federation 2.0 runtime, maintained by the
 Module Federation org and recommended by the Vite team). Unlike the older
 <code>@originjs/vite-plugin-federation</code>, remotes work in <strong>dev mode</strong>, so you get HMR in
 every app while running the host.</p>
-<p><strong>Remotes</strong> (<code>apps/shell-*/vite.config.js</code>):</p>
-<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">federation({
-  name: 'shellA',                 // container name, must be unique
-  filename: 'remoteEntry.js',     // served at &lt;VITE_PUBLIC_URL&gt;/remoteEntry.js
-  exposes: { './App': './src/App.vue' },
-  shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } },
-  bundleAllCSS: true,             // inject this remote's CSS when the host loads ./App
-  dts: false,                     // plain JS project
-})</code></pre></div>
-<p><strong>Host</strong> (<code>apps/host/vite.config.js</code>):</p>
+<p>Federation runs <strong>both ways</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>App</th>
+<th>Exposes</th>
+<th>Consumes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>host</td>
+<td><code>./ui-dev</code> (shared UI library)</td>
+<td><code>shellA/App</code>, <code>shellB/App</code></td>
+</tr>
+<tr>
+<td>shell-a</td>
+<td><code>./App</code></td>
+<td><code>host/ui-dev</code></td>
+</tr>
+<tr>
+<td>shell-b</td>
+<td><code>./App</code></td>
+<td><code>host/ui-dev</code></td>
+</tr>
+</tbody></table>
+</div><p><strong>Remotes</strong> read their options from <code>shared.federation.json</code> (see <a href="#/vite-config">How vite.config.mjs is built</a>):</p>
+<div class="code"><div class="code__bar"><span>json</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-json">{
+  &quot;name&quot;: &quot;shellA&quot;,
+  &quot;exposes&quot;: { &quot;./App&quot;: &quot;./src/expose/App.mjs&quot; },
+  &quot;remotes&quot;: { &quot;host&quot;: { &quot;type&quot;: &quot;module&quot;, &quot;entryEnv&quot;: &quot;VITE_HOST_ENTRY&quot; } },
+  &quot;shared&quot;: { &quot;vue&quot;: { &quot;singleton&quot;: true, &quot;requiredVersion&quot;: &quot;^3.5.0&quot; } },
+  &quot;bundleAllCSS&quot;: true,
+  &quot;shareStrategy&quot;: &quot;loaded-first&quot;
+}</code></pre></div>
+<p><strong>Host</strong> keeps its options inline in <code>apps/host/vite.config.mjs</code>:</p>
 <div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">federation({
   name: 'host',
+  exposes: { './ui-dev': './src/ui-dev/index.mjs' },
   remotes: {
-    shellA: { type: 'module', name: 'shellA', entry: env.VITE_SHELL_A_ENTRY, entryGlobalName: 'shellA', shareScope: 'default' },
-    shellB: { type: 'module', name: 'shellB', entry: env.VITE_SHELL_B_ENTRY, entryGlobalName: 'shellB', shareScope: 'default' },
+    shellA: { type: 'module', name: 'shellA', entry: env.raw.VITE_SHELL_A_ENTRY, entryGlobalName: 'shellA' },
+    shellB: { type: 'module', name: 'shellB', entry: env.raw.VITE_SHELL_B_ENTRY, entryGlobalName: 'shellB' },
   },
   shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } },
+  bundleAllCSS: true,
+  shareStrategy: 'loaded-first',
 })</code></pre></div>
-<p>The host imports <code>shellA/App</code> like a normal module. <code>src/utils/defineRemoteComponent.js</code>
+<p>The host imports <code>shellA/App</code> like a normal module. <code>src/utils/defineRemoteComponent.mjs</code>
 wraps it in <code>defineAsyncComponent</code> with loading and error components, so a remote that
 is down shows a friendly card instead of breaking the page.</p>
+<p><code>shareStrategy: &#39;loaded-first&#39;</code> stops the runtime from fetching every remote&#39;s
+<code>remoteEntry.js</code> up front. Without it, a standalone shell-b that loads <code>host/ui-dev</code> would
+also try to fetch shell-a.</p>
+<h3 id="architecture--shared-ui-library"><a class="anchor" href="#/architecture/shared-ui-library" aria-label="Link to this section">#</a>Shared UI library</h3>
+<p>See <a href="#/ui-dev">ui-dev</a>. Remotes write <code>&lt;UiButton&gt;</code> with no import, and a
+components resolver turns it into <code>import { UiButton } from &#39;host/ui-dev&#39;</code>. Each remote&#39;s
+exposed entry (<code>src/expose/App.mjs</code>) awaits <code>host/ui-dev</code> before the host renders it.</p>
 <h3 id="architecture--what-is-shared-and-why"><a class="anchor" href="#/architecture/what-is-shared-and-why" aria-label="Link to this section">#</a>What is shared and why</h3>
 <div class="table-wrap"><table>
 <thead>
 <tr>
-<th>Package</th>
+<th>Package / module</th>
 <th>Shared?</th>
 <th>Reason</th>
 </tr>
@@ -434,6 +493,11 @@ is down shows a friendly card instead of breaking the page.</p>
 <td><code>vue</code></td>
 <td>✅ singleton</td>
 <td>Remotes render inside the host&#39;s Vue app; two Vue runtimes would break reactivity and <code>provide/inject</code>.</td>
+</tr>
+<tr>
+<td><code>host/ui-dev</code></td>
+<td>✅ exposed module</td>
+<td>One component library, owned and served by the host.</td>
 </tr>
 <tr>
 <td><code>vue-router</code></td>
@@ -456,7 +520,7 @@ is down shows a friendly card instead of breaking the page.</p>
 would resolve the <em>host&#39;s</em> store (or nothing). To keep stores isolated:</p>
 <ol>
 <li>Every app creates its store <strong>and its own injection key</strong>:
-<code>hostStoreKey</code>, <code>shellAStoreKey</code>, <code>shellBStoreKey</code> (<code>src/store/index.js</code>).</li>
+<code>hostStoreKey</code>, <code>shellAStoreKey</code>, <code>shellBStoreKey</code> (<code>src/store/index.mjs</code>).</li>
 <li>The host installs its store with <code>app.use(store, hostStoreKey)</code>.</li>
 <li>Each remote&#39;s root <code>App.vue</code> calls <code>provide(shellAStoreKey, store)</code>, so its whole
 subtree resolves its own store, both inside the host and standalone.</li>
@@ -465,7 +529,7 @@ subtree resolves its own store, both inside the host and standalone.</li>
 </ol>
 <p>All modules are <code>namespaced: true</code>.</p>
 <h2 id="architecture--3-private-axios-instances"><a class="anchor" href="#/architecture/3-private-axios-instances" aria-label="Link to this section">#</a>3. Private axios instances</h2>
-<p><code>src/services/http.js</code> exists in <strong>every</strong> app and calls <code>axios.create()</code>:</p>
+<p><code>src/services/http.mjs</code> exists in <strong>every</strong> app and calls <code>axios.create()</code>:</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -498,7 +562,7 @@ subtree resolves its own store, both inside the host and standalone.</li>
 and axios is not in <code>shared</code>, so every bundle carries its own copy.</p>
 <h2 id="architecture--4-authentication-contract"><a class="anchor" href="#/architecture/4-authentication-contract" aria-label="Link to this section">#</a>4. Authentication contract</h2>
 <ul>
-<li>The host logs in (<code>store/modules/auth.js</code> → <code>services/authService.js</code>).</li>
+<li>The host logs in (<code>store/modules/auth.mjs</code> → <code>services/authService.mjs</code>).</li>
 <li>The session <code>{ user, token }</code> is written to <code>sessionStorage[&#39;mfe.auth&#39;]</code>.</li>
 <li>Each remote&#39;s axios request interceptor reads the token from that key and sends
 <code>Authorization: Bearer &lt;token&gt;</code>.</li>
@@ -507,7 +571,7 @@ and axios is not in <code>shared</code>, so every bundle carries its own copy.</
 </ul>
 <p>Mock login: <code>demo / demo123</code>, <code>guest / guest123</code>. Set <code>VITE_USE_MOCK_AUTH=false</code> to use
 the real dummyjson endpoint (<code>emilys / emilyspass</code>).</p>
-<h2 id="architecture--5-event-bus-srcutilsmfebusjs-one-copy-per-app"><a class="anchor" href="#/architecture/5-event-bus-srcutilsmfebusjs-one-copy-per-app" aria-label="Link to this section">#</a>5. Event bus (<code>src/utils/mfeBus.js</code>, one copy per app)</h2>
+<h2 id="architecture--5-event-bus-srcutilsmfebusmjs-one-copy-per-app"><a class="anchor" href="#/architecture/5-event-bus-srcutilsmfebusmjs-one-copy-per-app" aria-label="Link to this section">#</a>5. Event bus (<code>src/utils/mfeBus.mjs</code>, one copy per app)</h2>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -547,9 +611,164 @@ global selectors out of remotes. Standalone-only layout lives inline in <code>in
 <h2 id="architecture--7-failure-isolation"><a class="anchor" href="#/architecture/7-failure-isolation" aria-label="Link to this section">#</a>7. Failure isolation</h2>
 <ul>
 <li>Remote unreachable → <code>RemoteFallback</code> error card (host keeps working).</li>
+<li>Host unreachable → standalone remotes can&#39;t load <code>host/ui-dev</code> (run the host too).</li>
 <li>API unreachable → the remote&#39;s service falls back to <code>src/services/fixtures</code>.</li>
 <li>Remote throws during render → only that route&#39;s view is affected.</li>
 </ul>
+
+</article>
+<article class="doc" id="page-vite-config" data-page="vite-config" hidden>
+<p class="doc__source">Source: <code>docs/VITE_CONFIG.md</code></p>
+<h1 id="vite-config--how-viteconfigmjs-is-built">How <code>vite.config.mjs</code> is built</h1>
+<p>Every app&#39;s config is plain ESM (<code>.mjs</code>, no TypeScript) and is driven by <strong>two inputs</strong>:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Input</th>
+<th>What it holds</th>
+<th>Who has it</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>.env</code> + <code>.env.[mode]</code></td>
+<td>everything environment-specific: ports, URLs, CORS, sourcemaps, remote entry URLs</td>
+<td>all apps</td>
+</tr>
+<tr>
+<td><code>shared.federation.json</code></td>
+<td>the federation <strong>contract</strong>: name, exposes, remotes (by env key), shared deps</td>
+<td><strong>remotes only</strong> (shell-a, shell-b)</td>
+</tr>
+</tbody></table>
+</div><p>The host keeps its federation options inline in <code>vite.config.mjs</code>.</p>
+<div class="code"><div class="code__bar"><span>text</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-text">apps/shell-a/
+├─ .env, .env.development, .env.localprod, .env.staging, .env.production, .env.example
+├─ shared.federation.json
+├─ config/
+│  ├─ env.mjs          # readEnv(mode, root, extraKeys) + envBanner()
+│  └─ federation.mjs   # shared.federation.json → @module-federation/vite options
+└─ vite.config.mjs</code></pre></div>
+<h2 id="vite-config--1-configenvmjs-load-and-validate-envmode"><a class="anchor" href="#/vite-config/1-configenvmjs-load-and-validate-envmode" aria-label="Link to this section">#</a>1. <code>config/env.mjs</code>: load and validate <code>.env.[mode]</code></h2>
+<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">import { loadEnv } from 'vite'
+const raw = loadEnv(mode, root, '')   // '' = every key, not only VITE_*</code></pre></div>
+<ul>
+<li><code>npm run dev</code> → mode <code>development</code> → <code>.env</code> + <code>.env.development</code> (+ <code>.local</code> overrides).</li>
+<li><code>npm run build:staging</code> → <code>.env.staging</code>. <code>npm run preview</code> → <code>--mode localprod</code>.</li>
+<li>Required keys: <code>VITE_APP_NAME</code>, <code>VITE_PORT</code>, <code>VITE_PUBLIC_URL</code>, <code>VITE_API_BASE_URL</code>, plus every
+remote entry key (host: <code>VITE_SHELL_A_ENTRY</code>, <code>VITE_SHELL_B_ENTRY</code>; remotes: whatever
+<code>shared.federation.json</code> lists as <code>entryEnv</code>, i.e. <code>VITE_HOST_ENTRY</code>).
+Missing keys stop the dev server/build with a clear message.</li>
+<li>Returns typed values used by the config:</li>
+</ul>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Returned</th>
+<th>From</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>port</code></td>
+<td><code>VITE_PORT</code></td>
+<td><code>server.port</code>, <code>preview.port</code></td>
+</tr>
+<tr>
+<td><code>devHost</code></td>
+<td><code>VITE_DEV_HOST</code></td>
+<td><code>server.host</code>, <code>preview.host</code></td>
+</tr>
+<tr>
+<td><code>open</code></td>
+<td><code>VITE_OPEN</code></td>
+<td><code>server.open</code></td>
+</tr>
+<tr>
+<td><code>publicUrl</code> / <code>origin</code></td>
+<td><code>VITE_PUBLIC_URL</code></td>
+<td>build <code>base</code>, dev <code>server.origin</code></td>
+</tr>
+<tr>
+<td><code>corsOrigins</code></td>
+<td><code>VITE_CORS_ORIGINS</code></td>
+<td><code>server.cors</code> / <code>preview.cors</code> allow-list</td>
+</tr>
+<tr>
+<td><code>sourcemap</code></td>
+<td><code>VITE_SOURCEMAP</code></td>
+<td><code>build.sourcemap</code></td>
+</tr>
+<tr>
+<td><code>dropConsole</code></td>
+<td><code>VITE_DROP_CONSOLE</code></td>
+<td><code>esbuild.pure</code> (console.log/debug) + <code>esbuild.drop</code> (debugger)</td>
+</tr>
+<tr>
+<td><code>appName</code>, <code>appEnv</code></td>
+<td><code>VITE_APP_NAME</code>, <code>VITE_APP_ENV</code></td>
+<td><code>define: { __APP_NAME__, __APP_ENV__ }</code></td>
+</tr>
+<tr>
+<td><code>raw</code></td>
+<td>everything</td>
+<td>remote entry URLs</td>
+</tr>
+</tbody></table>
+</div><p><code>envBanner()</code> is a 10-line plugin that prints the resolved values when Vite starts:</p>
+<div class="code"><div class="code__bar"><span>text</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-text">  env mode           development
+      app            shell-a (development)
+      url            http://localhost:5001/
+      api            https://dummyjson.com
+      remote:host    http://localhost:5000/remoteEntry.js
+      sourcemap      true</code></pre></div>
+<h2 id="vite-config--2-sharedfederationjson-remotes"><a class="anchor" href="#/vite-config/2-sharedfederationjson-remotes" aria-label="Link to this section">#</a>2. <code>shared.federation.json</code> (remotes)</h2>
+<div class="code"><div class="code__bar"><span>json</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-json">{
+  &quot;name&quot;: &quot;shellA&quot;,
+  &quot;filename&quot;: &quot;remoteEntry.js&quot;,
+  &quot;exposes&quot;: { &quot;./App&quot;: &quot;./src/expose/App.mjs&quot; },
+  &quot;remotes&quot;: { &quot;host&quot;: { &quot;type&quot;: &quot;module&quot;, &quot;entryEnv&quot;: &quot;VITE_HOST_ENTRY&quot; } },
+  &quot;shared&quot;: { &quot;vue&quot;: { &quot;singleton&quot;: true, &quot;requiredVersion&quot;: &quot;^3.5.0&quot; } },
+  &quot;notShared&quot;: { &quot;axios&quot;: &quot;…&quot;, &quot;vuex&quot;: &quot;…&quot; },
+  &quot;bundleAllCSS&quot;: true,
+  &quot;shareStrategy&quot;: &quot;loaded-first&quot;
+}</code></pre></div>
+<ul>
+<li><code>remotes.&lt;name&gt;.entryEnv</code> names the env key that holds the URL, so the JSON is identical
+in every environment and the URL changes per <code>.env.[mode]</code>.</li>
+<li><code>notShared</code> is documentation <strong>and</strong> a guard: <code>config/federation.mjs</code> throws if a package
+appears in both <code>shared</code> and <code>notShared</code>, or if a shared package isn&#39;t in <code>package.json</code>.</li>
+</ul>
+<p><code>config/federation.mjs</code> turns it into plugin options:</p>
+<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">federation(createFederationOptions(fed, env.raw, pkg))
+// → { name, filename, exposes, remotes: { host: { type, name, entry: env.raw.VITE_HOST_ENTRY, … } },
+//     shared, bundleAllCSS, shareStrategy, dts: false }</code></pre></div>
+<h2 id="vite-config--3-host-appshostviteconfigmjs"><a class="anchor" href="#/vite-config/3-host-appshostviteconfigmjs" aria-label="Link to this section">#</a>3. Host (<code>apps/host/vite.config.mjs</code>)</h2>
+<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">const REMOTE_ENV = { shellA: 'VITE_SHELL_A_ENTRY', shellB: 'VITE_SHELL_B_ENTRY' }
+const env = readEnv(mode, root, Object.values(REMOTE_ENV))
+const remoteUrls = Object.fromEntries(Object.entries(REMOTE_ENV).map(([n, k]) =&gt; [n, env.raw[k]]))
+
+federation({
+  name: 'host',
+  exposes: { './ui-dev': './src/ui-dev/index.mjs' },
+  remotes: { shellA: { type: 'module', entry: remoteUrls.shellA, … }, shellB: { … } },
+  shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } },
+  bundleAllCSS: true,
+  shareStrategy: 'loaded-first',
+})</code></pre></div>
+<h2 id="vite-config--4-no-typescript"><a class="anchor" href="#/vite-config/4-no-typescript" aria-label="Link to this section">#</a>4. No TypeScript</h2>
+<ul>
+<li>All source and config files are <code>.mjs</code> / <code>.vue</code> with <code>&lt;script setup&gt;</code> in JavaScript.</li>
+<li><code>unplugin-auto-import</code> and <code>unplugin-vue-components</code> run with <code>dts: false</code>, so no <code>.d.ts</code>
+files are generated.</li>
+<li><code>jsconfig.json</code> in each app gives editors the <code>@/*</code> alias and ESM resolution; it does not
+type-check (<code>checkJs: false</code>).</li>
+<li>Federated type generation is off (<code>dts: false</code> in the federation options).</li>
+</ul>
+<h2 id="vite-config--5-why-mjs"><a class="anchor" href="#/vite-config/5-why-mjs" aria-label="Link to this section">#</a>5. Why <code>.mjs</code></h2>
+<p><code>.mjs</code> is always ESM in Node, independent of <code>&quot;type&quot;</code> in <code>package.json</code>, so config files,
+scripts (<code>scripts/build-docs.mjs</code>) and source files all share one unambiguous module format.
+Vite resolves <code>.mjs</code> by default (<code>resolve.extensions</code> starts with <code>.mjs</code>), so imports can stay
+extension-less: <code>import { http } from &#39;./http&#39;</code> finds <code>http.mjs</code>.</p>
 
 </article>
 <article class="doc" id="page-environments" data-page="environments" hidden>
@@ -606,7 +825,9 @@ shell environment variables.</p>
 <p>Only variables prefixed with <code>VITE_</code> reach browser code (<code>import.meta.env.VITE_*</code>).
 Never put secrets in these files: everything <code>VITE_*</code> ends up in the JS bundle.</p>
 </blockquote>
-<h2 id="environments--host-appshost"><a class="anchor" href="#/environments/host-appshost" aria-label="Link to this section">#</a>Host (<code>apps/host</code>)</h2>
+<p>All values are loaded by each app&#39;s <code>config/env.mjs</code> and used in <code>vite.config.mjs</code>
+(see <a href="#/vite-config">How vite.config.mjs is built</a>).</p>
+<h2 id="environments--variables-used-by-every-app"><a class="anchor" href="#/environments/variables-used-by-every-app" aria-label="Link to this section">#</a>Variables used by every app</h2>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -615,141 +836,340 @@ Never put secrets in these files: everything <code>VITE_*</code> ends up in the 
 <th>localprod</th>
 <th>staging</th>
 <th>production</th>
+<th>Used for</th>
 </tr>
 </thead>
 <tbody><tr>
 <td><code>VITE_APP_NAME</code></td>
-<td>host</td>
-<td>host</td>
-<td>host</td>
-<td>host</td>
+<td>(in <code>.env</code>)</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>X-Client-App</code> header, <code>__APP_NAME__</code></td>
 </tr>
 <tr>
 <td><code>VITE_PORT</code></td>
-<td>5000</td>
-<td>5000</td>
-<td>5000</td>
-<td>5000</td>
+<td>5000 / 5001 / 5002 (in <code>.env</code>)</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>server.port</code>, <code>preview.port</code></td>
+</tr>
+<tr>
+<td><code>VITE_DEV_HOST</code></td>
+<td>localhost (in <code>.env</code>)</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>server.host</code></td>
+</tr>
+<tr>
+<td><code>VITE_APP_ENV</code></td>
+<td>development</td>
+<td>localprod</td>
+<td>staging</td>
+<td>production</td>
+<td><code>__APP_ENV__</code></td>
 </tr>
 <tr>
 <td><code>VITE_PUBLIC_URL</code></td>
-<td><a href="http://localhost:5000/" target="_blank" rel="noopener">http://localhost:5000/</a></td>
+<td><a href="http://localhost:500x/" target="_blank" rel="noopener">http://localhost:500x/</a></td>
+<td><a href="http://localhost:500x/" target="_blank" rel="noopener">http://localhost:500x/</a></td>
+<td>https://…staging.example.com/</td>
+<td>https://….example.com/</td>
+<td>dev <code>server.origin</code>, build <code>base</code></td>
+</tr>
+<tr>
+<td><code>VITE_OPEN</code></td>
+<td>false</td>
+<td>false</td>
+<td>false</td>
+<td>false</td>
+<td><code>server.open</code></td>
+</tr>
+<tr>
+<td><code>VITE_SOURCEMAP</code></td>
+<td>true</td>
+<td>true</td>
+<td>true</td>
+<td>false</td>
+<td><code>build.sourcemap</code></td>
+</tr>
+<tr>
+<td><code>VITE_DROP_CONSOLE</code></td>
+<td>false</td>
+<td>true</td>
+<td>false</td>
+<td>true</td>
+<td>strip <code>console.log/debug</code> + <code>debugger</code></td>
+</tr>
+<tr>
+<td><code>VITE_CORS_ORIGINS</code></td>
+<td>see below</td>
+<td></td>
+<td></td>
+<td></td>
+<td><code>server.cors</code> / <code>preview.cors</code></td>
+</tr>
+<tr>
+<td><code>VITE_API_TIMEOUT</code></td>
+<td>10000 host / 8000 remotes (in <code>.env</code>)</td>
+<td></td>
+<td></td>
+<td></td>
+<td>axios timeout</td>
+</tr>
+</tbody></table>
+</div><h2 id="environments--host-appshost"><a class="anchor" href="#/environments/host-appshost" aria-label="Link to this section">#</a>Host (<code>apps/host</code>)</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>development / localprod</th>
+<th>staging</th>
+<th>production</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>VITE_PUBLIC_URL</code></td>
 <td><a href="http://localhost:5000/" target="_blank" rel="noopener">http://localhost:5000/</a></td>
 <td><a href="https://staging.example.com/" target="_blank" rel="noopener">https://staging.example.com/</a></td>
 <td><a href="https://app.example.com/" target="_blank" rel="noopener">https://app.example.com/</a></td>
 </tr>
 <tr>
-<td><code>VITE_API_BASE_URL</code></td>
-<td><a href="https://dummyjson.com" target="_blank" rel="noopener">https://dummyjson.com</a></td>
-<td><a href="https://dummyjson.com" target="_blank" rel="noopener">https://dummyjson.com</a></td>
-<td><a href="https://api.staging.example.com" target="_blank" rel="noopener">https://api.staging.example.com</a></td>
-<td><a href="https://api.example.com" target="_blank" rel="noopener">https://api.example.com</a></td>
+<td><code>VITE_CORS_ORIGINS</code> (who may load <code>host/ui-dev</code>)</td>
+<td><a href="http://localhost:5001,http://localhost:5002" target="_blank" rel="noopener">http://localhost:5001,http://localhost:5002</a></td>
+<td><a href="https://shell-a.staging.example.com,https://shell-b.staging.example.com" target="_blank" rel="noopener">https://shell-a.staging.example.com,https://shell-b.staging.example.com</a></td>
+<td><a href="https://shell-a.example.com,https://shell-b.example.com" target="_blank" rel="noopener">https://shell-a.example.com,https://shell-b.example.com</a></td>
 </tr>
 <tr>
 <td><code>VITE_SHELL_A_ENTRY</code></td>
 <td><a href="http://localhost:5001/remoteEntry.js" target="_blank" rel="noopener">http://localhost:5001/remoteEntry.js</a></td>
-<td>same</td>
 <td><a href="https://shell-a.staging.example.com/remoteEntry.js" target="_blank" rel="noopener">https://shell-a.staging.example.com/remoteEntry.js</a></td>
 <td><a href="https://shell-a.example.com/remoteEntry.js" target="_blank" rel="noopener">https://shell-a.example.com/remoteEntry.js</a></td>
 </tr>
 <tr>
 <td><code>VITE_SHELL_B_ENTRY</code></td>
 <td><a href="http://localhost:5002/remoteEntry.js" target="_blank" rel="noopener">http://localhost:5002/remoteEntry.js</a></td>
-<td>same</td>
 <td><a href="https://shell-b.staging.example.com/remoteEntry.js" target="_blank" rel="noopener">https://shell-b.staging.example.com/remoteEntry.js</a></td>
 <td><a href="https://shell-b.example.com/remoteEntry.js" target="_blank" rel="noopener">https://shell-b.example.com/remoteEntry.js</a></td>
 </tr>
 <tr>
-<td><code>VITE_USE_MOCK_AUTH</code></td>
-<td>true</td>
-<td>true</td>
-<td>false</td>
-<td>false</td>
+<td><code>VITE_API_BASE_URL</code></td>
+<td><a href="https://dummyjson.com" target="_blank" rel="noopener">https://dummyjson.com</a></td>
+<td><a href="https://api.staging.example.com" target="_blank" rel="noopener">https://api.staging.example.com</a></td>
+<td><a href="https://api.example.com" target="_blank" rel="noopener">https://api.example.com</a></td>
 </tr>
 <tr>
-<td><code>VITE_API_TIMEOUT</code></td>
-<td>10000 (from <code>.env</code>)</td>
-<td></td>
-<td></td>
-<td></td>
+<td><code>VITE_USE_MOCK_AUTH</code></td>
+<td>true</td>
+<td>false</td>
+<td>false</td>
 </tr>
 </tbody></table>
-</div><p><code>vite.config.js</code> reads <code>VITE_SHELL_*_ENTRY</code> with <code>loadEnv()</code> and <strong>fails the build</strong> if one is
-missing for the current mode.</p>
+</div><p><code>config/env.mjs</code> <strong>stops the dev server or build</strong> if <code>VITE_SHELL_A_ENTRY</code> / <code>VITE_SHELL_B_ENTRY</code>
+(or any required key) is missing for the current mode.</p>
 <h2 id="environments--remotes-appsshell-a-appsshell-b"><a class="anchor" href="#/environments/remotes-appsshell-a-appsshell-b" aria-label="Link to this section">#</a>Remotes (<code>apps/shell-a</code>, <code>apps/shell-b</code>)</h2>
 <div class="table-wrap"><table>
 <thead>
 <tr>
 <th>Variable</th>
-<th>development</th>
-<th>localprod</th>
+<th>development / localprod</th>
 <th>staging</th>
 <th>production</th>
 </tr>
 </thead>
 <tbody><tr>
-<td><code>VITE_PORT</code></td>
-<td>5001 / 5002</td>
-<td>same</td>
-<td>same</td>
-<td>same</td>
-</tr>
-<tr>
 <td><code>VITE_PUBLIC_URL</code></td>
-<td><a href="http://localhost:500x/" target="_blank" rel="noopener">http://localhost:500x/</a></td>
 <td><a href="http://localhost:500x/" target="_blank" rel="noopener">http://localhost:500x/</a></td>
 <td><a href="https://shell-x.staging.example.com/" target="_blank" rel="noopener">https://shell-x.staging.example.com/</a></td>
 <td><a href="https://shell-x.example.com/" target="_blank" rel="noopener">https://shell-x.example.com/</a></td>
+</tr>
+<tr>
+<td><code>VITE_CORS_ORIGINS</code> (who may load this remote)</td>
+<td><a href="http://localhost:5000" target="_blank" rel="noopener">http://localhost:5000</a></td>
+<td><a href="https://staging.example.com" target="_blank" rel="noopener">https://staging.example.com</a></td>
+<td><a href="https://app.example.com" target="_blank" rel="noopener">https://app.example.com</a></td>
+</tr>
+<tr>
+<td><code>VITE_HOST_URL</code></td>
+<td><a href="http://localhost:5000/" target="_blank" rel="noopener">http://localhost:5000/</a></td>
+<td><a href="https://staging.example.com/" target="_blank" rel="noopener">https://staging.example.com/</a></td>
+<td><a href="https://app.example.com/" target="_blank" rel="noopener">https://app.example.com/</a></td>
+</tr>
+<tr>
+<td><code>VITE_HOST_ENTRY</code> (where <code>host/ui-dev</code> comes from)</td>
+<td><a href="http://localhost:5000/remoteEntry.js" target="_blank" rel="noopener">http://localhost:5000/remoteEntry.js</a></td>
+<td><a href="https://staging.example.com/remoteEntry.js" target="_blank" rel="noopener">https://staging.example.com/remoteEntry.js</a></td>
+<td><a href="https://app.example.com/remoteEntry.js" target="_blank" rel="noopener">https://app.example.com/remoteEntry.js</a></td>
 </tr>
 <tr>
 <td><code>VITE_API_BASE_URL</code></td>
 <td>dummyjson (A) / jsonplaceholder (B)</td>
 <td>same</td>
 <td>same</td>
-<td>same</td>
-</tr>
-<tr>
-<td><code>VITE_HOST_URL</code></td>
-<td><a href="http://localhost:5000/" target="_blank" rel="noopener">http://localhost:5000/</a></td>
-<td>same</td>
-<td><a href="https://staging.example.com/" target="_blank" rel="noopener">https://staging.example.com/</a></td>
-<td><a href="https://app.example.com/" target="_blank" rel="noopener">https://app.example.com/</a></td>
 </tr>
 <tr>
 <td><code>VITE_USE_MOCK_API</code></td>
 <td>false</td>
 <td>false</td>
 <td>false</td>
-<td>false</td>
-</tr>
-<tr>
-<td><code>VITE_API_TIMEOUT</code></td>
-<td>8000 (from <code>.env</code>)</td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 </tbody></table>
-</div><p><code>VITE_PUBLIC_URL</code> is the most important remote variable:</p>
+</div><p><code>VITE_HOST_ENTRY</code> is the env key named in <code>shared.federation.json</code> → <code>remotes.host.entryEnv</code>.</p>
+<p><code>VITE_PUBLIC_URL</code> is the most important remote variable:</p>
 <ul>
 <li><strong>dev</strong>: becomes <code>server.origin</code>, so the remote&#39;s dev assets are requested from <code>:5001</code>
 even though the page is the host on <code>:5000</code>.</li>
 <li><strong>build</strong>: becomes Vite&#39;s <code>base</code>. <code>remoteEntry.js</code> imports its chunks relative to this URL.
 If it&#39;s wrong, the host loads <code>remoteEntry.js</code> and then 404s on every chunk.</li>
 </ul>
+<p>The host also uses an absolute <code>base</code> in builds, because it is a remote too (it serves <code>ui-dev</code>).</p>
+<h2 id="environments--npm-run-preview-uses-localprod"><a class="anchor" href="#/environments/npm-run-preview-uses-localprod" aria-label="Link to this section">#</a><code>npm run preview</code> uses <code>localprod</code></h2>
+<p><code>vite preview</code> defaults to mode <code>production</code>, which would load the <code>example.com</code> URLs and
+CORS lists. Every app&#39;s <code>preview</code> script is therefore <code>vite preview --mode localprod</code>, which
+matches <code>npm run build:localprod</code> (and <code>npm run start</code> runs both).</p>
 <h2 id="environments--deploying-to-real-environments"><a class="anchor" href="#/environments/deploying-to-real-environments" aria-label="Link to this section">#</a>Deploying to real environments</h2>
 <ol>
 <li>Replace <code>example.com</code> URLs in <code>.env.staging</code> / <code>.env.production</code> of all three apps.</li>
 <li>Build and deploy the <strong>remotes first</strong> (<code>npm run build:staging -w @mfe/shell-a</code>, …).</li>
-<li>Build and deploy the host.</li>
-<li>Remotes must send CORS headers allowing the host origin for <code>remoteEntry.js</code> and chunks
-(<code>Access-Control-Allow-Origin</code>), or be served from the same domain under different paths,
+<li>Build and deploy the host. Changes to <code>ui-dev</code> must stay backwards compatible, because the already-deployed remotes load it from the host.</li>
+<li>Every app must send CORS headers for the apps that load it (remotes → host origin, host → remote origins for <code>ui-dev</code>; see <code>VITE_CORS_ORIGINS</code>) for <code>remoteEntry.js</code> and chunks
+(<code>Access-Control-Allow-Origin</code>), or all apps can be served from the same domain under different paths,
 e.g. <code>https://app.example.com/mfe/shell-a/</code> (then use that as <code>VITE_PUBLIC_URL</code>).</li>
 <li>Serve <code>remoteEntry.js</code> with <code>Cache-Control: no-cache</code>; hashed chunks can be cached forever.</li>
 </ol>
 <h3 id="environments--overriding-at-build-time-from-ci"><a class="anchor" href="#/environments/overriding-at-build-time-from-ci" aria-label="Link to this section">#</a>Overriding at build time from CI</h3>
 <div class="code"><div class="code__bar"><span>bash</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-bash">VITE_SHELL_A_ENTRY=https://cdn.acme.io/shell-a/1.4.2/remoteEntry.js npm run build -w @mfe/host</code></pre></div>
 <p>Shell variables take priority over every <code>.env*</code> file.</p>
+
+</article>
+<article class="doc" id="page-ui-dev" data-page="ui-dev" hidden>
+<p class="doc__source">Source: <code>docs/UI_DEV_LIBRARY.md</code></p>
+<h1 id="ui-dev--ui-dev-the-shared-ui-component-library">ui-dev: the shared UI component library</h1>
+<p><code>ui-dev</code> is a small Vue 3 component library that <strong>lives in the host</strong>
+(<code>apps/host/src/ui-dev</code>) and is <strong>shared with the remotes through Module Federation</strong>
+as <code>host/ui-dev</code>. There is no npm package and no separate build: the host serves it from
+its own <code>remoteEntry.js</code>.</p>
+<div class="code"><div class="code__bar"><span>text</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-text">apps/host/src/ui-dev/
+├─ index.mjs              # public API: named exports + optional install() plugin
+├─ styles/ui-dev.css      # design tokens as CSS custom properties (--ui-*)
+└─ components/
+   ├─ UiAlert.vue  UiBadge.vue  UiButton.vue
+   └─ UiCard.vue   UiInput.vue  UiSpinner.vue</code></pre></div>
+<h2 id="ui-dev--how-each-app-gets-it"><a class="anchor" href="#/ui-dev/how-each-app-gets-it" aria-label="Link to this section">#</a>How each app gets it</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>App</th>
+<th>How components are resolved</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>host</td>
+<td><code>unplugin-vue-components</code> with <code>dirs: [&#39;src/components&#39;, &#39;src/ui-dev/components&#39;]</code></td>
+<td>local files (no federation)</td>
+</tr>
+<tr>
+<td>shell-a / shell-b</td>
+<td><code>unplugin-vue-components</code> resolver: any <code>&lt;UiXxx&gt;</code> → <code>import { UiXxx } from &#39;host/ui-dev&#39;</code></td>
+<td>federated, loaded at runtime from <code>VITE_HOST_ENTRY</code></td>
+</tr>
+</tbody></table>
+</div><p>So in <strong>every</strong> app you just write the tag, with no import:</p>
+<div class="code"><div class="code__bar"><span>vue</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-vue">&lt;template&gt;
+  &lt;UiCard&gt;
+    &lt;UiInput v-model=&quot;email&quot; label=&quot;Email&quot; /&gt;
+    &lt;UiButton :loading=&quot;saving&quot; @click=&quot;save&quot;&gt;Save&lt;/UiButton&gt;
+  &lt;/UiCard&gt;
+&lt;/template&gt;</code></pre></div>
+<h3 id="ui-dev--host-side-appshostviteconfigmjs"><a class="anchor" href="#/ui-dev/host-side-appshostviteconfigmjs" aria-label="Link to this section">#</a>Host side (<code>apps/host/vite.config.mjs</code>)</h3>
+<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">federation({
+  name: 'host',
+  exposes: { './ui-dev': './src/ui-dev/index.mjs' },
+  bundleAllCSS: true,            // the library's CSS travels with the exposed module
+  shareStrategy: 'loaded-first', // a remote loading host/ui-dev must not fetch shell-a/shell-b
+  // …remotes, shared: { vue }
+})</code></pre></div>
+<p><code>src/main.mjs</code> imports <code>./ui-dev/styles/ui-dev.css</code> so the host&#39;s own pages get the tokens.</p>
+<h3 id="ui-dev--remote-side-appsshell-viteconfigmjs-sharedfederationjson"><a class="anchor" href="#/ui-dev/remote-side-appsshell-viteconfigmjs-sharedfederationjson" aria-label="Link to this section">#</a>Remote side (<code>apps/shell-*/vite.config.mjs</code> + <code>shared.federation.json</code>)</h3>
+<div class="code"><div class="code__bar"><span>json</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-json">&quot;remotes&quot;: { &quot;host&quot;: { &quot;type&quot;: &quot;module&quot;, &quot;entryEnv&quot;: &quot;VITE_HOST_ENTRY&quot; } }</code></pre></div>
+<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">const UiDevResolver = (name) =&gt; (/^Ui[A-Z]/.test(name) ? { name, from: 'host/ui-dev' } : undefined)
+Components({ dirs: ['src/components'], resolvers: [UiDevResolver] })</code></pre></div>
+<h3 id="ui-dev--why-the-remotes-await-importhostui-dev-first"><a class="anchor" href="#/ui-dev/why-the-remotes-await-importhostui-dev-first" aria-label="Link to this section">#</a>Why the remotes <code>await import(&#39;host/ui-dev&#39;)</code> first</h3>
+<p><code>host/ui-dev</code> is a federated module, so it arrives <strong>asynchronously</strong>. A component whose
+<code>setup()</code> runs before it has arrived would see <code>UiButton === undefined</code>. Both entry points
+of a remote therefore wait for it:</p>
+<ul>
+<li><code>src/expose/App.mjs</code> (what the host imports as <code>shellA/App</code>): <code>await import(&#39;host/ui-dev&#39;)</code>, then re-exports <code>App.vue</code>.</li>
+<li><code>src/main.mjs</code> (standalone): <code>await import(&#39;host/ui-dev&#39;)</code> before <code>createApp().mount()</code>.</li>
+</ul>
+<h2 id="ui-dev--components"><a class="anchor" href="#/ui-dev/components" aria-label="Link to this section">#</a>Components</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Props</th>
+<th>Slots / events</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>UiButton</code></td>
+<td><code>variant</code> primary · secondary · ghost · danger, <code>size</code> sm · md · lg, <code>type</code>, <code>loading</code>, <code>disabled</code>, <code>block</code></td>
+<td>default slot</td>
+</tr>
+<tr>
+<td><code>UiCard</code></td>
+<td><code>as</code> (tag), <code>padding</code> (px), <code>interactive</code></td>
+<td>default, <code>#header</code>, <code>#footer</code></td>
+</tr>
+<tr>
+<td><code>UiInput</code></td>
+<td><code>v-model</code>, <code>label</code>, <code>type</code>, <code>hint</code>, <code>error</code>; other attrs go to <code>&lt;input&gt;</code>, <code>class</code>/<code>style</code> to the wrapper</td>
+<td></td>
+</tr>
+<tr>
+<td><code>UiBadge</code></td>
+<td><code>tone</code> primary · success · warning · danger · info · neutral</td>
+<td>default slot</td>
+</tr>
+<tr>
+<td><code>UiSpinner</code></td>
+<td><code>size</code> (px), <code>label</code> (a11y)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>UiAlert</code></td>
+<td><code>tone</code> info · success · warning · danger, <code>title</code>, <code>dismissible</code></td>
+<td>default slot, <code>@dismiss</code></td>
+</tr>
+</tbody></table>
+</div><h2 id="ui-dev--theming"><a class="anchor" href="#/ui-dev/theming" aria-label="Link to this section">#</a>Theming</h2>
+<p>All styles read CSS custom properties defined in <code>ui-dev.css</code>:</p>
+<p><code>--ui-primary</code>, <code>--ui-primary-contrast</code>, <code>--ui-danger</code>, <code>--ui-warning</code>, <code>--ui-info</code>,
+<code>--ui-success</code>, <code>--ui-text</code>, <code>--ui-muted</code>, <code>--ui-surface</code>, <code>--ui-border</code>, <code>--ui-radius</code>, <code>--ui-font</code>.</p>
+<p>Each remote themes the library for its own subtree only:</p>
+<div class="code"><div class="code__bar"><span>scss</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-scss">// apps/shell-a/src/App.vue
+.shell-a {
+  --ui-primary: #{$accent};   // indigo buttons, badges, focus rings inside shell-a
+  --ui-border: #{$border};
+}</code></pre></div>
+<h2 id="ui-dev--adding-a-component"><a class="anchor" href="#/ui-dev/adding-a-component" aria-label="Link to this section">#</a>Adding a component</h2>
+<ol>
+<li>Create <code>apps/host/src/ui-dev/components/UiThing.vue</code> (scoped CSS, use <code>--ui-*</code> vars, import
+sibling Ui components explicitly).</li>
+<li>Export it from <code>apps/host/src/ui-dev/index.mjs</code> (named export <strong>and</strong> in the <code>components</code> map).</li>
+<li>Host: nothing else, it&#39;s auto-registered. Remotes: nothing else, <code>&lt;UiThing&gt;</code> resolves to <code>host/ui-dev</code>.</li>
+</ol>
+<h2 id="ui-dev--rules-its-a-shared-contract"><a class="anchor" href="#/ui-dev/rules-its-a-shared-contract" aria-label="Link to this section">#</a>Rules (it&#39;s a shared contract)</h2>
+<ul>
+<li><strong>Backwards compatible only.</strong> Remotes always get the version the host serves right now.
+Add props, don&#39;t rename or remove them; deprecate first.</li>
+<li><code>UI_DEV_VERSION</code> in <code>index.mjs</code> documents what&#39;s deployed; bump it on changes.</li>
+<li>No store, router or axios usage inside ui-dev: components are presentational.</li>
+<li>Remotes running <strong>standalone need the host running</strong> (dev: <code>npm run dev</code> at the root starts all).</li>
+</ul>
 
 </article>
 <article class="doc" id="page-vite7" data-page="vite7" hidden>
@@ -813,28 +1233,34 @@ app size, and HMR only touches the edited module.</li>
 <div class="code"><div class="code__bar"><span>text</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-text">apps/host/
 ├─ index.html        ← the real entry (not in /public). Vite parses it and follows &lt;script type=&quot;module&quot;&gt;
 ├─ public/           ← copied as-is, served at /  (favicon.svg)
-├─ vite.config.js
+├─ vite.config.mjs
 ├─ .env*             ← env files
-└─ src/main.js</code></pre></div>
+└─ src/main.mjs</code></pre></div>
 <p><code>index.html</code> supports env replacement: <code>&lt;title&gt;%VITE_APP_TITLE%&lt;/title&gt;</code>.</p>
-<h2 id="vite7--4-the-config-line-by-line-appshostviteconfigjs"><a class="anchor" href="#/vite7/4-the-config-line-by-line-appshostviteconfigjs" aria-label="Link to this section">#</a>4. The config, line by line (<code>apps/host/vite.config.js</code>)</h2>
+<h2 id="vite7--4-the-config-line-by-line-appshostviteconfigmjs"><a class="anchor" href="#/vite7/4-the-config-line-by-line-appshostviteconfigmjs" aria-label="Link to this section">#</a>4. The config, line by line (<code>apps/host/vite.config.mjs</code>)</h2>
 <div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">export default defineConfig(({ command, mode }) =&gt; {   // function form gives command/mode
-  const env = loadEnv(mode, process.cwd(), '')          // '' = load ALL vars, not only VITE_*
+  const env = readEnv(mode, root, ['VITE_SHELL_A_ENTRY', 'VITE_SHELL_B_ENTRY'])
+  //          └─ config/env.mjs: loadEnv(mode, root, '') + validation + typed values
   return {
-    plugins: [vue(), AutoImport({...}), Components({...}), federation({...})],
+    base: command === 'build' ? env.publicUrl : '/',
+    plugins: [envBanner(env, remoteUrls), vue(), AutoImport({...}), Components({...}), federation({...})],
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-    css: { preprocessorOptions: { scss: { additionalData: `@use &quot;@/styles/tokens&quot; as *;\n` } } },
-    server:  { port, strictPort: true },
-    preview: { port, strictPort: true },
-    build:   { target: 'esnext' },
+    define:  { __APP_NAME__: JSON.stringify(env.appName), __APP_ENV__: JSON.stringify(env.appEnv) },
+    css:     { preprocessorOptions: { scss: { additionalData: `@use &quot;@/styles/tokens&quot; as *;\n` } } },
+    server:  { host: env.devHost, port: env.port, strictPort: true, open: env.open, origin: env.origin, cors: { origin: env.corsOrigins } },
+    preview: { host: env.devHost, port: env.port, strictPort: true, cors: { origin: env.corsOrigins } },
+    esbuild: { pure: env.dropConsole ? ['console.log', 'console.debug'] : [] },
+    build:   { target: 'esnext', sourcemap: env.sourcemap },
   }
 })</code></pre></div>
 <ul>
-<li><code>command</code> is <code>&#39;serve&#39;</code> or <code>&#39;build&#39;</code>; remotes use it to set <code>base</code> only for builds.</li>
+<li><code>command</code> is <code>&#39;serve&#39;</code> or <code>&#39;build&#39;</code>; every app uses it to set an absolute <code>base</code> only for builds.</li>
 <li><code>mode</code> is <code>development</code> for <code>vite</code>, <code>production</code> for <code>vite build</code>, or whatever <code>--mode</code> says.</li>
+<li>The config file is <code>vite.config.mjs</code>: always ESM, no TypeScript. Details in <a href="#/vite-config">VITE_CONFIG.md</a>.</li>
 </ul>
 <h2 id="vite7--5-environment-variables"><a class="anchor" href="#/vite7/5-environment-variables" aria-label="Link to this section">#</a>5. Environment variables</h2>
 <ul>
+<li>In <code>vite.config.mjs</code> use <code>loadEnv(mode, root, &#39;&#39;)</code> (this repo wraps it in <code>config/env.mjs</code>). <code>import.meta.env</code> is <strong>not</strong> available inside the config.</li>
 <li><code>import.meta.env.VITE_*</code> in client code; <code>MODE</code>, <code>DEV</code>, <code>PROD</code>, <code>BASE_URL</code>, <code>SSR</code> are built in.</li>
 <li>Files: <code>.env</code>, <code>.env.local</code>, <code>.env.[mode]</code>, <code>.env.[mode].local</code>. See <a href="#/environments">ENVIRONMENTS.md</a>.</li>
 <li><code>process.env</code> does <strong>not</strong> exist in browser code. Replace <code>process.env.VUE_APP_X</code> with <code>import.meta.env.VITE_X</code>.</li>
@@ -859,12 +1285,14 @@ functions there, never real CSS rules, or they get duplicated per component.</li
 <div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">AutoImport({
   imports: ['vue', 'vue-router', 'vuex'],   // ref, computed, useRoute, useStore…
   dirs: ['src/composables', 'src/utils'],   // your own exports become globals too
-  dts: 'src/auto-imports.d.ts',             // editor IntelliSense (generated)
+  dts: false,                               // plain JS: no .d.ts (set a path to generate one)
   vueTemplate: true,                        // also usable inside &lt;template&gt;
 })
-Components({ dirs: ['src/components'], dts: 'src/components.d.ts' })</code></pre></div>
-<p><code>auto-imports.d.ts</code> and <code>components.d.ts</code> are generated on the first <code>dev</code>/<code>build</code>.
-Keep entry files (<code>main.js</code>) explicit: it makes bootstrap code readable.</p>
+Components({ dirs: ['src/components'], dts: false })</code></pre></div>
+<p>Keep entry files (<code>main.mjs</code>) explicit: it makes bootstrap code readable.</p>
+<p>This repo runs both plugins with <code>dts: false</code> (no TypeScript). Components can also come from a
+<strong>resolver</strong>: the remotes map every <code>&lt;UiXxx&gt;</code> tag to the federated module <code>host/ui-dev</code>:</p>
+<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">Components({ resolvers: [(name) =&gt; (/^Ui[A-Z]/.test(name) ? { name, from: 'host/ui-dev' } : undefined)] })</code></pre></div>
 <h2 id="vite7--9-code-splitting"><a class="anchor" href="#/vite7/9-code-splitting" aria-label="Link to this section">#</a>9. Code splitting</h2>
 <ul>
 <li><code>() =&gt; import(&#39;./View.vue&#39;)</code> in routes creates a separate chunk.</li>
@@ -949,7 +1377,7 @@ npm i -D vite@^7 @vitejs/plugin-vue@^6 sass @module-federation/vite \
 <td><code>vite preview</code></td>
 </tr>
 </tbody></table>
-</div><p>Add <code>&quot;type&quot;: &quot;module&quot;</code> to <code>package.json</code> so <code>vite.config.js</code> can use ESM.</p>
+</div><p>Add <code>&quot;type&quot;: &quot;module&quot;</code> to <code>package.json</code> so <code>vite.config.mjs</code> can use ESM.</p>
 <h2 id="migration--2-indexhtml-moves-to-the-project-root"><a class="anchor" href="#/migration/2-indexhtml-moves-to-the-project-root" aria-label="Link to this section">#</a>2. <code>index.html</code> moves to the project root</h2>
 <div class="table-wrap"><table>
 <thead>
@@ -972,20 +1400,20 @@ npm i -D vite@^7 @vitejs/plugin-vue@^6 sass @module-federation/vite \
 </tr>
 <tr>
 <td>bundle injected automatically</td>
-<td>add <code>&lt;script type=&quot;module&quot; src=&quot;/src/main.js&quot;&gt;&lt;/script&gt;</code> yourself</td>
+<td>add <code>&lt;script type=&quot;module&quot; src=&quot;/src/main.mjs&quot;&gt;&lt;/script&gt;</code> yourself</td>
 </tr>
 </tbody></table>
 </div><p>Inline critical CSS can stay in <code>&lt;style&gt;</code> inside <code>index.html</code> (see <code>apps/host/index.html</code>).</p>
-<h2 id="migration--3-config-vueconfigjs-webpackconfigjs-viteconfigjs"><a class="anchor" href="#/migration/3-config-vueconfigjs-webpackconfigjs-viteconfigjs" aria-label="Link to this section">#</a>3. Config: <code>vue.config.js</code> / <code>webpack.config.js</code> → <code>vite.config.js</code></h2>
+<h2 id="migration--3-config-vueconfigjs-webpackconfigjs-viteconfigmjs"><a class="anchor" href="#/migration/3-config-vueconfigjs-webpackconfigjs-viteconfigmjs" aria-label="Link to this section">#</a>3. Config: <code>vue.config.js</code> / <code>webpack.config.js</code> → <code>vite.config.mjs</code></h2>
 <div class="table-wrap"><table>
 <thead>
 <tr>
 <th>webpack</th>
-<th>Vite (<code>vite.config.js</code>)</th>
+<th>Vite (<code>vite.config.mjs</code>)</th>
 </tr>
 </thead>
 <tbody><tr>
-<td><code>entry: &#39;./src/main.js&#39;</code></td>
+<td><code>entry: &#39;./src/main.mjs&#39;</code></td>
 <td>from <code>index.html</code></td>
 </tr>
 <tr>
@@ -1096,9 +1524,9 @@ const ctx = require.context('./modules', false, /\.js$/)
 const modules = Object.fromEntries(ctx.keys().map((k) =&gt; [k.replace(/(\.\/|\.js)/g, ''), ctx(k).default]))
 
 // Vite
-const files = import.meta.glob('./modules/*.js', { eager: true })
+const files = import.meta.glob('./modules/*.mjs', { eager: true })
 const modules = Object.fromEntries(
-  Object.entries(files).map(([path, m]) =&gt; [path.match(/\/(\w+)\.js$/)[1], m.default]),
+  Object.entries(files).map(([path, m]) =&gt; [path.match(/\/(\w+)\.mjs$/)[1], m.default]),
 )</code></pre></div>
 <ul>
 <li>Dynamic image paths: <code>require(\</code>@/assets/${name}.png`)<code>→</code>new URL(`../assets/${name}.png`, import.meta.url).href`.</li>
@@ -1107,11 +1535,11 @@ const modules = Object.fromEntries(
 <ul>
 <li><code>~</code> prefix for node_modules imports (<code>@import &#39;~bootstrap/scss/x&#39;</code>) → drop it: <code>@use &#39;bootstrap/scss/x&#39;</code>.</li>
 <li><code>node-sass</code> → <code>sass</code> (Dart Sass). Vite 7 only supports the modern API.</li>
-<li>Move <code>@import &#39;variables&#39;</code> to <code>@use &#39;variables&#39; as *</code> and inject via <code>additionalData</code> (see <code>apps/*/vite.config.js</code>).</li>
+<li>Move <code>@import &#39;variables&#39;</code> to <code>@use &#39;variables&#39; as *</code> and inject via <code>additionalData</code> (see <code>apps/*/vite.config.mjs</code>).</li>
 <li><code>/deep/</code> and <code>&gt;&gt;&gt;</code> → <code>:deep(.child)</code> in scoped styles.</li>
 </ul>
 <h2 id="migration--7-auto-imports-instead-of-global-registration"><a class="anchor" href="#/migration/7-auto-imports-instead-of-global-registration" aria-label="Link to this section">#</a>7. Auto-imports instead of global registration</h2>
-<p>webpack apps often register components globally in <code>main.js</code> (<code>app.component(&#39;BaseButton&#39;, ...)</code>)
+<p>webpack apps often register components globally in <code>main.mjs</code> (<code>app.component(&#39;BaseButton&#39;, ...)</code>)
 or with <code>require.context</code>. Replace with:</p>
 <div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">Components({ dirs: ['src/components'], dts: 'src/components.d.ts' })
 AutoImport({ imports: ['vue', 'vue-router', 'vuex'], dirs: ['src/composables'], dts: 'src/auto-imports.d.ts' })</code></pre></div>
@@ -1125,7 +1553,7 @@ remotes called <code>useStore()</code>, they could get the host&#39;s store. Use
 its own injection key and <code>provide</code> it from the remote root (<code>apps/shell-a/src/App.vue</code>).</li>
 <li><strong>Global axios defaults.</strong> <code>axios.defaults.baseURL = ...</code> in one app leaks into others when
 axios is shared. Use <code>axios.create()</code> per app and remove axios from <code>shared</code>
-(<code>apps/*/src/services/http.js</code>).</li>
+(<code>apps/*/src/services/http.mjs</code>).</li>
 </ol>
 <h2 id="migration--9-module-federation-webpack-vite"><a class="anchor" href="#/migration/9-module-federation-webpack-vite" aria-label="Link to this section">#</a>9. Module Federation: webpack → Vite</h2>
 <h3 id="migration--remote"><a class="anchor" href="#/migration/remote" aria-label="Link to this section">#</a>Remote</h3>
@@ -1137,7 +1565,7 @@ new ModuleFederationPlugin({
   shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } },
 })
 output: { publicPath: 'http://localhost:5001/' }</code></pre></div>
-<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">// vite.config.js
+<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">// vite.config.mjs
 federation({
   name: 'shellA',
   filename: 'remoteEntry.js',
@@ -1159,7 +1587,7 @@ remotes: {
 <h3 id="migration--bootstrap-file"><a class="anchor" href="#/migration/bootstrap-file" aria-label="Link to this section">#</a>Bootstrap file</h3>
 <p>webpack MF needs an async boundary (<code>main.js</code> → <code>import(&#39;./bootstrap&#39;)</code>) to avoid
 &quot;Shared module is not available for eager consumption&quot;. <strong>Delete it</strong> in Vite: the plugin
-initialises sharing before your entry runs. Put the code back in <code>main.js</code>.</p>
+initialises sharing before your entry runs. Put the code back in <code>main.mjs</code>.</p>
 <h3 id="migration--mixed-bundlers-during-migration"><a class="anchor" href="#/migration/mixed-bundlers-during-migration" aria-label="Link to this section">#</a>Mixed bundlers during migration</h3>
 <ul>
 <li><strong>Vite host → webpack remote:</strong> declare the remote with <code>type: &#39;var&#39;</code> and its global name.</li>
@@ -1167,14 +1595,37 @@ initialises sharing before your entry runs. Put the code back in <code>main.js</
 and point the webpack host at that file (<code>shellA@https://.../varRemoteEntry.js</code>).</li>
 <li>Keep <code>shared</code> versions compatible on both sides.</li>
 </ul>
-<h2 id="migration--10-testing"><a class="anchor" href="#/migration/10-testing" aria-label="Link to this section">#</a>10. Testing</h2>
+<h3 id="migration--shared-ui-kit"><a class="anchor" href="#/migration/shared-ui-kit" aria-label="Link to this section">#</a>Shared UI kit</h3>
+<p>webpack MFE setups often share a design-system package (<code>shared: { &#39;@acme/ui&#39;: { singleton: true } }</code>)
+or publish it to npm. Here the host <strong>exposes</strong> it instead (<code>exposes: { &#39;./ui-dev&#39;: … }</code>), and
+remotes consume <code>host/ui-dev</code> through a components resolver. That means no npm release, one
+version in production, and themes through CSS variables. See <a href="#/ui-dev">ui-dev</a>.</p>
+<h3 id="migration--moving-federation-options-out-of-the-config-remotes"><a class="anchor" href="#/migration/moving-federation-options-out-of-the-config-remotes" aria-label="Link to this section">#</a>Moving federation options out of the config (remotes)</h3>
+<p>Remotes keep their <code>ModuleFederationPlugin</code> fields in <code>shared.federation.json</code> (<code>name</code>,
+<code>exposes</code>, <code>remotes</code>, <code>shared</code>). Remote URLs become env key names (<code>entryEnv</code>), so one JSON
+file works for every environment. See <a href="#/vite-config">How vite.config.mjs is built</a>.</p>
+<h2 id="migration--10-javascript-only-as-mjs"><a class="anchor" href="#/migration/10-javascript-only-as-mjs" aria-label="Link to this section">#</a>10. JavaScript only, as <code>.mjs</code></h2>
+<ul>
+<li>Rename <code>vue.config.js</code> / <code>webpack.config.js</code> to <code>vite.config.mjs</code>. <code>.mjs</code> is always ESM, so
+<code>import</code>/<code>export</code> work whatever <code>&quot;type&quot;</code> says.</li>
+<li>Rename source files to <code>.mjs</code> (<code>main.mjs</code>, <code>router/index.mjs</code>, …) and update
+<code>&lt;script type=&quot;module&quot; src=&quot;/src/main.mjs&quot;&gt;</code>. Extension-less imports keep working because
+Vite resolves <code>.mjs</code> first.</li>
+<li>Drop TypeScript-only tooling: set <code>dts: false</code> for unplugin-auto-import/-components and
+federation, delete generated <code>.d.ts</code>, and add a <code>jsconfig.json</code> for editor path aliases.</li>
+<li>Replace <code>process.env</code> in config code with <code>loadEnv(mode, root, &#39;&#39;)</code> (see <code>config/env.mjs</code>).</li>
+</ul>
+<h2 id="migration--11-testing"><a class="anchor" href="#/migration/11-testing" aria-label="Link to this section">#</a>11. Testing</h2>
 <p><code>jest</code> + <code>vue-jest</code> → <strong>Vitest</strong> (<code>npm i -D vitest @vue/test-utils jsdom</code>). It reuses
-<code>vite.config.js</code> (aliases, plugins). Most Jest APIs work with <code>vi</code> instead of <code>jest</code>.</p>
-<h2 id="migration--11-checklist"><a class="anchor" href="#/migration/11-checklist" aria-label="Link to this section">#</a>11. Checklist</h2>
+<code>vite.config.mjs</code> (aliases, plugins). Most Jest APIs work with <code>vi</code> instead of <code>jest</code>.</p>
+<h2 id="migration--12-checklist"><a class="anchor" href="#/migration/12-checklist" aria-label="Link to this section">#</a>12. Checklist</h2>
 <ul>
 <li><input disabled type="checkbox"> Node 20.19+ / 22.12+</li>
-<li><input disabled type="checkbox"> <code>index.html</code> at root with <code>&lt;script type=&quot;module&quot; src=&quot;/src/main.js&quot;&gt;</code></li>
-<li><input disabled type="checkbox"> <code>vite.config.js</code> with <code>@vitejs/plugin-vue</code> and the <code>@</code> alias</li>
+<li><input disabled type="checkbox"> <code>index.html</code> at root with <code>&lt;script type=&quot;module&quot; src=&quot;/src/main.mjs&quot;&gt;</code></li>
+<li><input disabled type="checkbox"> <code>vite.config.mjs</code> with <code>@vitejs/plugin-vue</code> and the <code>@</code> alias</li>
+<li><input disabled type="checkbox"> Config values come from <code>.env.[mode]</code> via <code>loadEnv</code> (<code>config/env.mjs</code>), nothing hard-coded</li>
+<li><input disabled type="checkbox"> Remotes: federation contract in <code>shared.federation.json</code></li>
+<li><input disabled type="checkbox"> Shared UI components consumed from <code>host/ui-dev</code>, not bundled per app</li>
 <li><input disabled type="checkbox"> <code>VUE_APP_*</code> → <code>VITE_*</code>, <code>process.env</code> → <code>import.meta.env</code></li>
 <li><input disabled type="checkbox"> No <code>require()</code> / <code>require.context()</code> left</li>
 <li><input disabled type="checkbox"> All <code>.vue</code> imports include the extension</li>
@@ -1208,27 +1659,35 @@ npm run dev -w @mfe/host</code></pre></div>
 </thead>
 <tbody><tr>
 <td>Sample login (mock or dummyjson)</td>
-<td><code>src/views/LoginView.vue</code>, <code>src/store/modules/auth.js</code>, <code>src/services/authService.js</code></td>
+<td><code>src/views/LoginView.vue</code>, <code>src/store/modules/auth.mjs</code>, <code>src/services/authService.mjs</code></td>
 </tr>
 <tr>
 <td>Route guard (<code>requiresAuth</code>, <code>guestOnly</code>)</td>
-<td><code>src/router/index.js</code></td>
+<td><code>src/router/index.mjs</code></td>
 </tr>
 <tr>
 <td>Own Vuex store + key <code>hostStoreKey</code></td>
-<td><code>src/store/index.js</code>, <code>src/composables/useHostStore.js</code></td>
+<td><code>src/store/index.mjs</code>, <code>src/composables/useHostStore.mjs</code></td>
 </tr>
 <tr>
 <td>Own axios instance</td>
-<td><code>src/services/http.js</code></td>
+<td><code>src/services/http.mjs</code></td>
 </tr>
 <tr>
 <td>Loading remotes safely</td>
-<td><code>src/utils/defineRemoteComponent.js</code>, <code>src/components/RemoteFallback.vue</code></td>
+<td><code>src/utils/defineRemoteComponent.mjs</code>, <code>src/components/RemoteFallback.vue</code></td>
 </tr>
 <tr>
 <td>Listening to remote events</td>
 <td><code>src/App.vue</code> → <code>notifications</code> module → header badges</td>
+</tr>
+<tr>
+<td><strong>ui-dev</strong> shared UI library (exposed as <code>host/ui-dev</code>)</td>
+<td><code>src/ui-dev/</code></td>
+</tr>
+<tr>
+<td>Env loader for <code>vite.config.mjs</code></td>
+<td><code>config/env.mjs</code></td>
 </tr>
 <tr>
 <td>Inline critical CSS + boot splash</td>
@@ -1239,7 +1698,24 @@ npm run dev -w @mfe/host</code></pre></div>
 <td><code>src/styles/_tokens.scss</code>, global styles <code>src/styles/main.scss</code></td>
 </tr>
 </tbody></table>
-</div><h2 id="host--routes"><a class="anchor" href="#/host/routes" aria-label="Link to this section">#</a>Routes</h2>
+</div><h2 id="host--ui-dev-library-shared-with-the-remotes"><a class="anchor" href="#/host/ui-dev-library-shared-with-the-remotes" aria-label="Link to this section">#</a>ui-dev library (shared with the remotes)</h2>
+<p>The host owns the component library in <code>src/ui-dev</code> and serves it to shell-a and shell-b:</p>
+<div class="code"><div class="code__bar"><span>js</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-js">// vite.config.mjs
+federation({ name: 'host', exposes: { './ui-dev': './src/ui-dev/index.mjs' }, … })</code></pre></div>
+<ul>
+<li>The host uses the components directly (auto-registered from <code>src/ui-dev/components</code>).</li>
+<li>Remotes write <code>&lt;UiButton&gt;</code> and it resolves to <code>host/ui-dev</code>.</li>
+<li><code>VITE_CORS_ORIGINS</code> must list every remote origin that loads it.</li>
+</ul>
+<p>Components: <code>UiButton</code>, <code>UiCard</code>, <code>UiInput</code>, <code>UiBadge</code>, <code>UiSpinner</code>, <code>UiAlert</code>.
+Full reference: <a href="#/ui-dev">docs/UI_DEV_LIBRARY.md</a>.</p>
+<h2 id="host--vite-config-and-env"><a class="anchor" href="#/host/vite-config-and-env" aria-label="Link to this section">#</a>Vite config and env</h2>
+<p><code>vite.config.mjs</code> calls <code>readEnv(mode, root, [&#39;VITE_SHELL_A_ENTRY&#39;, &#39;VITE_SHELL_B_ENTRY&#39;])</code>
+from <code>config/env.mjs</code>, which loads <code>.env</code> + <code>.env.[mode]</code> and validates them. Port, host,
+<code>server.origin</code>, CORS, <code>base</code>, sourcemaps, console stripping and remote URLs all come from
+there. The host&#39;s federation options stay inline in <code>vite.config.mjs</code>; only the remotes use
+<code>shared.federation.json</code>. See <a href="#/vite-config">docs/VITE_CONFIG.md</a>.</p>
+<h2 id="host--routes"><a class="anchor" href="#/host/routes" aria-label="Link to this section">#</a>Routes</h2>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -1299,7 +1775,7 @@ the token from there. Logout clears it and broadcasts <code>mfe:auth-changed</co
 <h2 id="host--adding-a-third-remote"><a class="anchor" href="#/host/adding-a-third-remote" aria-label="Link to this section">#</a>Adding a third remote</h2>
 <ol>
 <li>Add <code>VITE_SHELL_C_ENTRY</code> to every <code>.env.*</code> file of the host.</li>
-<li>Add it to <code>remotes</code> in <code>vite.config.js</code> (and to the fail-fast check list).</li>
+<li>Add it to <code>REMOTE_ENV</code> and <code>remotes</code> in <code>vite.config.mjs</code>, and add the remote&#39;s origin to <code>VITE_CORS_ORIGINS</code>.</li>
 <li>Create <code>src/views/ShellCView.vue</code> with <code>defineRemoteComponent(() =&gt; import(&#39;shellC/App&#39;), &#39;Shell C&#39;)</code>.</li>
 <li>Add a route and a header link.</li>
 </ol>
@@ -1317,11 +1793,11 @@ Details: <a href="#/environments">docs/ENVIRONMENTS.md</a>.</p>
 </thead>
 <tbody><tr>
 <td><code>vue.config.js</code> with <code>ModuleFederationPlugin({ remotes: { shellA: &#39;shellA@http://localhost:5001/remoteEntry.js&#39; } })</code></td>
-<td><code>vite.config.js</code> → <code>federation({ remotes: { shellA: { type: &#39;module&#39;, entry: env.VITE_SHELL_A_ENTRY, … } } })</code></td>
+<td><code>vite.config.mjs</code> → <code>federation({ remotes: { shellA: { type: &#39;module&#39;, entry: env.VITE_SHELL_A_ENTRY, … } } })</code></td>
 </tr>
 <tr>
 <td><code>src/main.js</code> → <code>import(&#39;./bootstrap&#39;)</code> async boundary</td>
-<td>Single <code>src/main.js</code>, no bootstrap file</td>
+<td>Single <code>src/main.mjs</code>, no bootstrap file</td>
 </tr>
 <tr>
 <td><code>public/index.html</code> with <code>&lt;%= htmlWebpackPlugin.options.title %&gt;</code></td>
@@ -1341,7 +1817,7 @@ Details: <a href="#/environments">docs/ENVIRONMENTS.md</a>.</p>
 </tr>
 <tr>
 <td><code>axios.defaults.baseURL = ...</code></td>
-<td><code>axios.create()</code> in <code>src/services/http.js</code></td>
+<td><code>axios.create()</code> in <code>src/services/http.mjs</code></td>
 </tr>
 <tr>
 <td><code>app.use(store)</code></td>
@@ -1382,7 +1858,11 @@ npm run dev                  # from the repo root: host + both remotes</code></p
 </tr>
 <tr>
 <td>Exposed module</td>
-<td><code>./App</code> → <code>src/App.vue</code> (host: <code>import(&#39;shellA/App&#39;)</code>)</td>
+<td><code>./App</code> → <code>src/expose/App.mjs</code> → <code>src/App.vue</code> (host: <code>import(&#39;shellA/App&#39;)</code>)</td>
+</tr>
+<tr>
+<td>Consumes</td>
+<td><code>host/ui-dev</code> (shared UI components) from <code>VITE_HOST_ENTRY</code></td>
 </tr>
 <tr>
 <td>Props</td>
@@ -1424,15 +1904,27 @@ npm run dev                  # from the repo root: host + both remotes</code></p
 </tr>
 <tr>
 <td>Own axios instance → <a href="https://dummyjson.com" target="_blank" rel="noopener">https://dummyjson.com</a></td>
-<td><code>src/services/http.js</code></td>
+<td><code>src/services/http.mjs</code></td>
 </tr>
 <tr>
 <td>Offline fixtures (network fallback / <code>VITE_USE_MOCK_API=true</code>)</td>
 <td><code>src/services/fixtures/</code></td>
 </tr>
 <tr>
+<td>Federation contract</td>
+<td><code>shared.federation.json</code> → <code>config/federation.mjs</code></td>
+</tr>
+<tr>
+<td>Env loader for <code>vite.config.mjs</code></td>
+<td><code>config/env.mjs</code></td>
+</tr>
+<tr>
+<td>UI components (<code>&lt;Ui*&gt;</code>, no imports)</td>
+<td>resolved to <code>host/ui-dev</code> by <code>UiDevResolver</code> in <code>vite.config.mjs</code></td>
+</tr>
+<tr>
 <td>Event bus (own copy)</td>
-<td><code>src/utils/mfeBus.js</code></td>
+<td><code>src/utils/mfeBus.mjs</code></td>
 </tr>
 <tr>
 <td>Sass tokens</td>
@@ -1440,14 +1932,34 @@ npm run dev                  # from the repo root: host + both remotes</code></p
 </tr>
 <tr>
 <td>Standalone bootstrap</td>
-<td><code>src/main.js</code> (never runs inside the host)</td>
+<td><code>src/main.mjs</code> (never runs inside the host)</td>
 </tr>
 <tr>
 <td>Inline critical CSS + standalone layout</td>
 <td><code>index.html</code> (never loaded by the host)</td>
 </tr>
 </tbody></table>
-</div><h3 id="shell-a--why-the-store-is-provided-in-appvue"><a class="anchor" href="#/shell-a/why-the-store-is-provided-in-appvue" aria-label="Link to this section">#</a>Why the store is <code>provide</code>d in App.vue</h3>
+</div><h3 id="shell-a--sharedfederationjson"><a class="anchor" href="#/shell-a/sharedfederationjson" aria-label="Link to this section">#</a>shared.federation.json</h3>
+<p>This remote&#39;s federation options live in <code>shared.federation.json</code>, not in <code>vite.config.mjs</code>:</p>
+<div class="code"><div class="code__bar"><span>json</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-json">{
+  &quot;name&quot;: &quot;shellA&quot;,
+  &quot;exposes&quot;: { &quot;./App&quot;: &quot;./src/expose/App.mjs&quot; },
+  &quot;remotes&quot;: { &quot;host&quot;: { &quot;type&quot;: &quot;module&quot;, &quot;entryEnv&quot;: &quot;VITE_HOST_ENTRY&quot; } },
+  &quot;shared&quot;: { &quot;vue&quot;: { &quot;singleton&quot;: true, &quot;requiredVersion&quot;: &quot;^3.5.0&quot; } },
+  &quot;notShared&quot;: { &quot;axios&quot;: &quot;…&quot;, &quot;vuex&quot;: &quot;…&quot; },
+  &quot;bundleAllCSS&quot;: true,
+  &quot;shareStrategy&quot;: &quot;loaded-first&quot;
+}</code></pre></div>
+<p><code>entryEnv</code> names the <code>.env.[mode]</code> key holding the URL, so this file is the same in every
+environment. See <a href="#/vite-config">docs/VITE_CONFIG.md</a>.</p>
+<h3 id="shell-a--using-the-hosts-ui-dev-components"><a class="anchor" href="#/shell-a/using-the-hosts-ui-dev-components" aria-label="Link to this section">#</a>Using the host&#39;s ui-dev components</h3>
+<p>Write <code>&lt;UiButton&gt;</code>, <code>&lt;UiCard&gt;</code>, <code>&lt;UiInput&gt;</code>, <code>&lt;UiBadge&gt;</code>, <code>&lt;UiSpinner&gt;</code>, <code>&lt;UiAlert&gt;</code> with no
+import. <code>UiDevResolver</code> turns them into <code>import { UiButton } from &#39;host/ui-dev&#39;</code>. The theme
+comes from CSS variables on the root (<code>.shell-a { --ui-primary: … }</code> in <code>src/App.vue</code>).
+<code>src/expose/App.mjs</code> and <code>src/main.mjs</code> both <code>await import(&#39;host/ui-dev&#39;)</code> first.
+<strong>Standalone mode needs the host running</strong> on :5000.
+See <a href="#/ui-dev">docs/UI_DEV_LIBRARY.md</a>.</p>
+<h3 id="shell-a--why-the-store-is-provided-in-appvue"><a class="anchor" href="#/shell-a/why-the-store-is-provided-in-appvue" aria-label="Link to this section">#</a>Why the store is <code>provide</code>d in App.vue</h3>
 <p>Inside the host, this component renders in the <strong>host&#39;s</strong> Vue app. A bare <code>useStore()</code>
 would not find this remote&#39;s store. <code>provide(shellAStoreKey, store)</code> in the root and
 <code>useStore(shellAStoreKey)</code> in children keep the store private and identical in both modes.</p>
@@ -1491,8 +2003,12 @@ So: scoped styles only, a root class (<code>.shell-a</code>) on the root element
 </tr>
 </thead>
 <tbody><tr>
-<td><code>new ModuleFederationPlugin({ name: &#39;shellA&#39;, filename: &#39;remoteEntry.js&#39;, exposes: { &#39;./App&#39;: &#39;./src/App.vue&#39; } })</code></td>
-<td><code>federation({ name: &#39;shellA&#39;, filename: &#39;remoteEntry.js&#39;, exposes: { &#39;./App&#39;: &#39;./src/App.vue&#39; }, bundleAllCSS: true })</code></td>
+<td><code>new ModuleFederationPlugin({ name: &#39;shellA&#39;, exposes: { &#39;./App&#39;: &#39;./src/App.vue&#39; }, remotes: { host: &#39;host@…&#39; } })</code> in <code>webpack.config.js</code></td>
+<td><code>shared.federation.json</code> (same fields, remote URL via <code>entryEnv</code>) → <code>federation(createFederationOptions(json, env.raw, pkg))</code></td>
+</tr>
+<tr>
+<td>Shared UI kit as an npm package / <code>shared: { &#39;@acme/ui&#39;: … }</code></td>
+<td><code>host/ui-dev</code> federated module + <code>UiDevResolver</code></td>
 </tr>
 <tr>
 <td><code>output.publicPath: &#39;http://localhost:5001/&#39;</code> (or <code>&#39;auto&#39;</code>)</td>
@@ -1504,7 +2020,7 @@ So: scoped styles only, a root class (<code>.shell-a</code>) on the root element
 </tr>
 <tr>
 <td><code>main.js</code> → <code>import(&#39;./bootstrap&#39;)</code></td>
-<td>Plain <code>main.js</code></td>
+<td>Plain <code>main.mjs</code></td>
 </tr>
 <tr>
 <td><code>shared: { vue, vuex, axios }</code></td>
@@ -1551,7 +2067,11 @@ npm run dev                  # from the repo root: host + both remotes</code></p
 </tr>
 <tr>
 <td>Exposed module</td>
-<td><code>./App</code> → <code>src/App.vue</code> (host: <code>import(&#39;shellB/App&#39;)</code>)</td>
+<td><code>./App</code> → <code>src/expose/App.mjs</code> → <code>src/App.vue</code> (host: <code>import(&#39;shellB/App&#39;)</code>)</td>
+</tr>
+<tr>
+<td>Consumes</td>
+<td><code>host/ui-dev</code> (shared UI components) from <code>VITE_HOST_ENTRY</code></td>
 </tr>
 <tr>
 <td>Props</td>
@@ -1593,15 +2113,27 @@ npm run dev                  # from the repo root: host + both remotes</code></p
 </tr>
 <tr>
 <td>Own axios instance → <a href="https://jsonplaceholder.typicode.com" target="_blank" rel="noopener">https://jsonplaceholder.typicode.com</a></td>
-<td><code>src/services/http.js</code></td>
+<td><code>src/services/http.mjs</code></td>
 </tr>
 <tr>
 <td>Offline fixtures (network fallback / <code>VITE_USE_MOCK_API=true</code>)</td>
 <td><code>src/services/fixtures/</code></td>
 </tr>
 <tr>
+<td>Federation contract</td>
+<td><code>shared.federation.json</code> → <code>config/federation.mjs</code></td>
+</tr>
+<tr>
+<td>Env loader for <code>vite.config.mjs</code></td>
+<td><code>config/env.mjs</code></td>
+</tr>
+<tr>
+<td>UI components (<code>&lt;Ui*&gt;</code>, no imports)</td>
+<td>resolved to <code>host/ui-dev</code> by <code>UiDevResolver</code> in <code>vite.config.mjs</code></td>
+</tr>
+<tr>
 <td>Event bus (own copy)</td>
-<td><code>src/utils/mfeBus.js</code></td>
+<td><code>src/utils/mfeBus.mjs</code></td>
 </tr>
 <tr>
 <td>Sass tokens</td>
@@ -1609,14 +2141,34 @@ npm run dev                  # from the repo root: host + both remotes</code></p
 </tr>
 <tr>
 <td>Standalone bootstrap</td>
-<td><code>src/main.js</code> (never runs inside the host)</td>
+<td><code>src/main.mjs</code> (never runs inside the host)</td>
 </tr>
 <tr>
 <td>Inline critical CSS + standalone layout</td>
 <td><code>index.html</code> (never loaded by the host)</td>
 </tr>
 </tbody></table>
-</div><h3 id="shell-b--why-the-store-is-provided-in-appvue"><a class="anchor" href="#/shell-b/why-the-store-is-provided-in-appvue" aria-label="Link to this section">#</a>Why the store is <code>provide</code>d in App.vue</h3>
+</div><h3 id="shell-b--sharedfederationjson"><a class="anchor" href="#/shell-b/sharedfederationjson" aria-label="Link to this section">#</a>shared.federation.json</h3>
+<p>This remote&#39;s federation options live in <code>shared.federation.json</code>, not in <code>vite.config.mjs</code>:</p>
+<div class="code"><div class="code__bar"><span>json</span><button type="button" class="code__copy">Copy</button></div><pre><code class="lang-json">{
+  &quot;name&quot;: &quot;shellB&quot;,
+  &quot;exposes&quot;: { &quot;./App&quot;: &quot;./src/expose/App.mjs&quot; },
+  &quot;remotes&quot;: { &quot;host&quot;: { &quot;type&quot;: &quot;module&quot;, &quot;entryEnv&quot;: &quot;VITE_HOST_ENTRY&quot; } },
+  &quot;shared&quot;: { &quot;vue&quot;: { &quot;singleton&quot;: true, &quot;requiredVersion&quot;: &quot;^3.5.0&quot; } },
+  &quot;notShared&quot;: { &quot;axios&quot;: &quot;…&quot;, &quot;vuex&quot;: &quot;…&quot; },
+  &quot;bundleAllCSS&quot;: true,
+  &quot;shareStrategy&quot;: &quot;loaded-first&quot;
+}</code></pre></div>
+<p><code>entryEnv</code> names the <code>.env.[mode]</code> key holding the URL, so this file is the same in every
+environment. See <a href="#/vite-config">docs/VITE_CONFIG.md</a>.</p>
+<h3 id="shell-b--using-the-hosts-ui-dev-components"><a class="anchor" href="#/shell-b/using-the-hosts-ui-dev-components" aria-label="Link to this section">#</a>Using the host&#39;s ui-dev components</h3>
+<p>Write <code>&lt;UiButton&gt;</code>, <code>&lt;UiCard&gt;</code>, <code>&lt;UiInput&gt;</code>, <code>&lt;UiBadge&gt;</code>, <code>&lt;UiSpinner&gt;</code>, <code>&lt;UiAlert&gt;</code> with no
+import. <code>UiDevResolver</code> turns them into <code>import { UiButton } from &#39;host/ui-dev&#39;</code>. The theme
+comes from CSS variables on the root (<code>.shell-b { --ui-primary: … }</code> in <code>src/App.vue</code>).
+<code>src/expose/App.mjs</code> and <code>src/main.mjs</code> both <code>await import(&#39;host/ui-dev&#39;)</code> first.
+<strong>Standalone mode needs the host running</strong> on :5000.
+See <a href="#/ui-dev">docs/UI_DEV_LIBRARY.md</a>.</p>
+<h3 id="shell-b--why-the-store-is-provided-in-appvue"><a class="anchor" href="#/shell-b/why-the-store-is-provided-in-appvue" aria-label="Link to this section">#</a>Why the store is <code>provide</code>d in App.vue</h3>
 <p>Inside the host, this component renders in the <strong>host&#39;s</strong> Vue app. A bare <code>useStore()</code>
 would not find this remote&#39;s store. <code>provide(shellBStoreKey, store)</code> in the root and
 <code>useStore(shellBStoreKey)</code> in children keep the store private and identical in both modes.</p>
@@ -1660,8 +2212,12 @@ So: scoped styles only, a root class (<code>.shell-b</code>) on the root element
 </tr>
 </thead>
 <tbody><tr>
-<td><code>new ModuleFederationPlugin({ name: &#39;shellB&#39;, filename: &#39;remoteEntry.js&#39;, exposes: { &#39;./App&#39;: &#39;./src/App.vue&#39; } })</code></td>
-<td><code>federation({ name: &#39;shellB&#39;, filename: &#39;remoteEntry.js&#39;, exposes: { &#39;./App&#39;: &#39;./src/App.vue&#39; }, bundleAllCSS: true })</code></td>
+<td><code>new ModuleFederationPlugin({ name: &#39;shellB&#39;, exposes: { &#39;./App&#39;: &#39;./src/App.vue&#39; }, remotes: { host: &#39;host@…&#39; } })</code> in <code>webpack.config.js</code></td>
+<td><code>shared.federation.json</code> (same fields, remote URL via <code>entryEnv</code>) → <code>federation(createFederationOptions(json, env.raw, pkg))</code></td>
+</tr>
+<tr>
+<td>Shared UI kit as an npm package / <code>shared: { &#39;@acme/ui&#39;: … }</code></td>
+<td><code>host/ui-dev</code> federated module + <code>UiDevResolver</code></td>
 </tr>
 <tr>
 <td><code>output.publicPath: &#39;http://localhost:5002/&#39;</code> (or <code>&#39;auto&#39;</code>)</td>
@@ -1673,7 +2229,7 @@ So: scoped styles only, a root class (<code>.shell-b</code>) on the root element
 </tr>
 <tr>
 <td><code>main.js</code> → <code>import(&#39;./bootstrap&#39;)</code></td>
-<td>Plain <code>main.js</code></td>
+<td>Plain <code>main.mjs</code></td>
 </tr>
 <tr>
 <td><code>shared: { vue, vuex, axios }</code></td>
@@ -1701,7 +2257,7 @@ webpack host at <code>shellB@http://localhost:5002/varRemoteEntry.js</code>.</p>
 
 <script>
 (() => {
-  const INDEX = [{"id":"overview","title":"Overview","toc":[{"depth":3,"text":"What&#39;s inside","anchor":"overview--whats-inside"},{"depth":2,"text":"Quick start","anchor":"overview--quick-start"},{"depth":3,"text":"Production build, locally","anchor":"overview--production-build-locally"},{"depth":3,"text":"All scripts (root)","anchor":"overview--all-scripts-root"},{"depth":2,"text":"Repository layout","anchor":"overview--repository-layout"},{"depth":2,"text":"Documentation","anchor":"overview--documentation"},{"depth":2,"text":"Troubleshooting","anchor":"overview--troubleshooting"}],"text":" vue-mfe-vite A complete, working Vue 3 + Vite 7 micro-frontend monorepo built with Module Federation . App Role Port Exposes / consumes Theme --- --- --- --- --- apps/host apps/host/README.md Container: routing, login , layout, header 5000 consumes shellA/App , shellB/App green apps/shell-a apps/shell-a/README.md Remote: product catalog + cart 5001 exposes ./App indigo apps/shell-b apps/shell-b/README.md Remote: task board 5002 exposes ./App teal What's inside - Vite 7 vite@^7.3 with @vitejs/plugin-vue@6 - Module Federation via @module-federation/vite https://module-federation.io/integrations/build-tool/vite works in dev and build - Sass modern compiler API with per-app design tokens injected through additionalData - Critical CSS inline in each index.html background + boot splash before JS loads - Auto import : unplugin-auto-import vue, vuex, vue-router, own composables and unplugin-vue-components no manual component registration - Vuex 4: one independent store per app , each installed/provided under its own injection key - axios: one private instance per app own baseURL, timeout, interceptors and not shared through federation - Sample login in the host route guard, session in sessionStorage - Cross-app communication with a tiny window CustomEvent bus mfe: instead of shared state - Per-app env files for development / localprod / staging / production - Offline fixtures, so the demo still works behind a proxy with no internet Quick start Requirements: Node 20.19+ or 22.12+ Vite 7 requirement and npm 10+. Open http://localhost:5000 and sign in with demo / demo123 or guest / guest123 . Each remote also runs on its own: http://localhost:5001 and http://localhost:5002. Production build, locally All scripts root Script What it does --- --- npm run dev All three dev servers in parallel concurrently npm run dev:host / dev:shell-a / dev:shell-b One app only npm run build Production build .env.production , remotes first, then host npm run build:staging Staging build .env.staging npm run build:localprod Production bundles pointing at localhost .env.localprod npm run preview Serve every dist/ with vite preview npm run start build:localprod + preview npm run docs Build the docs site and serve it on :5050 npm run docs:build Regenerate docs/site/index.html from the Markdown npm run clean Remove dist/ and federation temp folders Repository layout Documentation Developer docs site: open docs/site/index.html docs/site/index.html in a browser works from disk , or run npm run docs to serve it at http://localhost:5050. It is generated from the Markdown files below by scripts/build-docs.mjs ; after editing any .md , run npm run docs:build . - Architecture docs/ARCHITECTURE.md - Environments & env files docs/ENVIRONMENTS.md - Vite 7 guide docs/VITE7 GUIDE.md - Migrating from webpack Vue CLI / webpack 5 Module Federation to Vite docs/WEBPACK TO VITE MIGRATION.md - App READMEs: host apps/host/README.md · shell-a apps/shell-a/README.md · shell-b apps/shell-b/README.md Troubleshooting Symptom Fix --- --- \"Shell A is unavailable\" card in the host The remote isn't running. npm run dev at the root starts all apps. Check VITE SHELL A ENTRY . Port already in use Ports are strictPort . Free 5000–5002 or change VITE PORT and the host's VITE SHELL ENTRY . Remote chunks 404 in production The remote's VITE PUBLIC URL build base must be the URL it is deployed at. Products / tasks show fixture data The public APIs dummyjson / jsonplaceholder were unreachable; the services fell back to src/services/fixtures . Unsupported engine / Vite won't start Upgrade Node to 20.19+ or 22.12+. "},{"id":"architecture","title":"Architecture","toc":[{"depth":2,"text":"1. Module Federation","anchor":"architecture--1-module-federation"},{"depth":3,"text":"What is shared and why","anchor":"architecture--what-is-shared-and-why"},{"depth":2,"text":"2. Independent Vuex stores","anchor":"architecture--2-independent-vuex-stores"},{"depth":2,"text":"3. Private axios instances","anchor":"architecture--3-private-axios-instances"},{"depth":2,"text":"4. Authentication contract","anchor":"architecture--4-authentication-contract"},{"depth":2,"text":"5. Event bus (src/utils/mfeBus.js, one copy per app)","anchor":"architecture--5-event-bus-srcutilsmfebusjs-one-copy-per-app"},{"depth":2,"text":"6. Styling","anchor":"architecture--6-styling"},{"depth":2,"text":"7. Failure isolation","anchor":"architecture--7-failure-isolation"}],"text":" Architecture 1. Module Federation Plugin: @module-federation/vite Module Federation 2.0 runtime, maintained by the Module Federation org and recommended by the Vite team . Unlike the older @originjs/vite-plugin-federation , remotes work in dev mode , so you get HMR in every app while running the host. Remotes apps/shell- /vite.config.js : Host apps/host/vite.config.js : The host imports shellA/App like a normal module. src/utils/defineRemoteComponent.js wraps it in defineAsyncComponent with loading and error components, so a remote that is down shows a friendly card instead of breaking the page. What is shared and why Package Shared? Reason --- --- --- vue ✅ singleton Remotes render inside the host's Vue app; two Vue runtimes would break reactivity and provide/inject . vue-router ❌ Only the host routes. Remotes expose components, not routers. vuex ❌ Each app must own its store and its Vuex version. axios ❌ Each app owns its HTTP client, interceptors and defaults requirement . 2. Independent Vuex stores Because remotes render inside the host's Vue app , a bare useStore in a remote would resolve the host's store or nothing . To keep stores isolated: 1. Every app creates its store and its own injection key : hostStoreKey , shellAStoreKey , shellBStoreKey src/store/index.js . 2. The host installs its store with app.use store, hostStoreKey . 3. Each remote's root App.vue calls provide shellAStoreKey, store , so its whole subtree resolves its own store, both inside the host and standalone. 4. Components use auto-imported helpers: useHostStore , useShellAStore , useShellBStore src/composables . All modules are namespaced: true . 3. Private axios instances src/services/http.js exists in every app and calls axios.create : App baseURL dev timeout Header --- --- --- --- host https://dummyjson.com VITE API TIMEOUT 10s X-Client-App: host shell-a https://dummyjson.com 8s X-Client-App: shell-a shell-b https://jsonplaceholder.typicode.com 8s X-Client-App: shell-b Interceptors are per instance. The global axios default instance is never configured, and axios is not in shared , so every bundle carries its own copy. 4. Authentication contract - The host logs in store/modules/auth.js → services/authService.js . - The session { user, token } is written to sessionStorage 'mfe.auth' . - Each remote's axios request interceptor reads the token from that key and sends Authorization: Bearer \u003ctoken . - The host also passes user as a prop to each remote root component. - Login/logout broadcasts mfe:auth-changed . Mock login: demo / demo123 , guest / guest123 . Set VITE USE MOCK AUTH=false to use the real dummyjson endpoint emilys / emilyspass . 5. Event bus src/utils/mfeBus.js , one copy per app Event Publisher → Subscriber Payload --- --- --- mfe:auth-changed host → remotes { user } mfe:cart-updated shell-a → host { count, items } mfe:tasks-updated shell-b → host { open, total } The host listens in App.vue and commits into its notifications module, which drives the header badges and dashboard cards. 6. Styling - index.html of each app carries inline critical CSS background, font, splash . Remote index.html files are only used standalone, so their inline CSS never reaches the host. - src/styles/ tokens.scss holds variables, mixins and functions only, injected into every \u003cstyle lang=\"scss\" via css.preprocessorOptions.scss.additionalData . - Remote components are scoped and namespaced by a root class .shell-a , .shell-b . With bundleAllCSS: true all CSS imported by a remote ships with ./App , so keep global selectors out of remotes. Standalone-only layout lives inline in index.html . 7. Failure isolation - Remote unreachable → RemoteFallback error card host keeps working . - API unreachable → the remote's service falls back to src/services/fixtures . - Remote throws during render → only that route's view is affected. "},{"id":"environments","title":"Environments","toc":[{"depth":2,"text":"Host (apps/host)","anchor":"environments--host-appshost"},{"depth":2,"text":"Remotes (apps/shell-a, apps/shell-b)","anchor":"environments--remotes-appsshell-a-appsshell-b"},{"depth":2,"text":"Deploying to real environments","anchor":"environments--deploying-to-real-environments"},{"depth":3,"text":"Overriding at build time from CI","anchor":"environments--overriding-at-build-time-from-ci"}],"text":" Environments & env files Every app has the same set of files: File Loaded when Purpose --- --- --- .env always Values common to all modes name, title, port, timeout .env.development vite / npm run dev Local dev servers, localhost remote URLs .env.localprod vite build --mode localprod Production bundles that still point at localhost for vite preview .env.staging vite build --mode staging Staging domains / CDN .env.production vite build Production domains / CDN .env.example never documentation Every variable with a comment .env. mode .local that mode, on your machine Personal overrides, git-ignored Priority later wins : .env \u003c .env.local \u003c .env. mode \u003c .env. mode .local \u003c real shell environment variables. Only variables prefixed with VITE reach browser code import.meta.env.VITE . Never put secrets in these files: everything VITE ends up in the JS bundle. Host apps/host Variable development localprod staging production --- --- --- --- --- VITE APP NAME host host host host VITE PORT 5000 5000 5000 5000 VITE PUBLIC URL http://localhost:5000/ http://localhost:5000/ https://staging.example.com/ https://app.example.com/ VITE API BASE URL https://dummyjson.com https://dummyjson.com https://api.staging.example.com https://api.example.com VITE SHELL A ENTRY http://localhost:5001/remoteEntry.js same https://shell-a.staging.example.com/remoteEntry.js https://shell-a.example.com/remoteEntry.js VITE SHELL B ENTRY http://localhost:5002/remoteEntry.js same https://shell-b.staging.example.com/remoteEntry.js https://shell-b.example.com/remoteEntry.js VITE USE MOCK AUTH true true false false VITE API TIMEOUT 10000 from .env vite.config.js reads VITE SHELL ENTRY with loadEnv and fails the build if one is missing for the current mode. Remotes apps/shell-a , apps/shell-b Variable development localprod staging production --- --- --- --- --- VITE PORT 5001 / 5002 same same same VITE PUBLIC URL http://localhost:500x/ http://localhost:500x/ https://shell-x.staging.example.com/ https://shell-x.example.com/ VITE API BASE URL dummyjson A / jsonplaceholder B same same same VITE HOST URL http://localhost:5000/ same https://staging.example.com/ https://app.example.com/ VITE USE MOCK API false false false false VITE API TIMEOUT 8000 from .env VITE PUBLIC URL is the most important remote variable: - dev : becomes server.origin , so the remote's dev assets are requested from :5001 even though the page is the host on :5000 . - build : becomes Vite's base . remoteEntry.js imports its chunks relative to this URL. If it's wrong, the host loads remoteEntry.js and then 404s on every chunk. Deploying to real environments 1. Replace example.com URLs in .env.staging / .env.production of all three apps. 2. Build and deploy the remotes first npm run build:staging -w @mfe/shell-a , … . 3. Build and deploy the host. 4. Remotes must send CORS headers allowing the host origin for remoteEntry.js and chunks Access-Control-Allow-Origin , or be served from the same domain under different paths, e.g. https://app.example.com/mfe/shell-a/ then use that as VITE PUBLIC URL . 5. Serve remoteEntry.js with Cache-Control: no-cache ; hashed chunks can be cached forever. Overriding at build time from CI Shell variables take priority over every .env file. "},{"id":"vite7","title":"Vite 7 guide","toc":[{"depth":2,"text":"1. Requirements and what changed in 7","anchor":"vite7--1-requirements-and-what-changed-in-7"},{"depth":2,"text":"2. How Vite works (vs. a bundler-first dev server)","anchor":"vite7--2-how-vite-works-vs-a-bundler-first-dev-server"},{"depth":2,"text":"3. Project anatomy","anchor":"vite7--3-project-anatomy"},{"depth":2,"text":"4. The config, line by line (apps/host/vite.config.js)","anchor":"vite7--4-the-config-line-by-line-appshostviteconfigjs"},{"depth":2,"text":"5. Environment variables","anchor":"vite7--5-environment-variables"},{"depth":2,"text":"6. CSS and Sass","anchor":"vite7--6-css-and-sass"},{"depth":2,"text":"7. Static assets","anchor":"vite7--7-static-assets"},{"depth":2,"text":"8. Auto import (unplugin)","anchor":"vite7--8-auto-import-unplugin"},{"depth":2,"text":"9. Code splitting","anchor":"vite7--9-code-splitting"},{"depth":2,"text":"10. Dev server and preview","anchor":"vite7--10-dev-server-and-preview"},{"depth":2,"text":"11. Module Federation in Vite 7","anchor":"vite7--11-module-federation-in-vite-7"},{"depth":2,"text":"12. Upgrading an existing Vite 5/6 app to 7","anchor":"vite7--12-upgrading-an-existing-vite-56-app-to-7"}],"text":" Vite 7 guide with examples from this repo Vite 7 was released in June 2025. It is an evolutionary release: the config format is the same as Vite 5/6, but the platform baseline moved forward. This guide covers what you need to run, configure and reason about the apps in this repo. 1. Requirements and what changed in 7 Topic Vite 7 --- --- Node.js 20.19+ or 22.12+ Node 18 dropped . These versions can require ESM, so Vite ships as ESM only . Default build.target 'baseline-widely-available' Chrome/Edge 107, Firefox 104, Safari 16 . Was 'modules' . Sass Only the modern Sass API is supported. The legacy API api: 'legacy' was removed. Removed splitVendorChunkPlugin , hook-level enforce / transform in transformIndexHtml use order / handler . Environment API Still experimental; adds a buildApp hook for frameworks. Not needed for SPAs. Bundler Rollup 4 for builds, esbuild for dep pre-bundling. Rolldown is available as the drop-in rolldown-vite package and is the default in Vite 8 . Plugin Vue @vitejs/plugin-vue@6 supports Vite 5 → 8. Vitest Use Vitest 3.2+ with Vite 7. In this repo every app sets build.target: 'esnext' , because the Module Federation runtime uses top-level await . 2. How Vite works vs. a bundler-first dev server - Dev : Vite serves your source as native ES modules. Only the file the browser asks for is transformed .vue → JS, .scss → CSS . Dependencies in node modules are pre-bundled once with esbuild into node modules/.vite . Start-up time doesn't grow with app size, and HMR only touches the edited module. - Build : Rollup bundles, tree-shakes, code-splits and hashes for production. 3. Project anatomy index.html supports env replacement: \u003ctitle %VITE APP TITLE%\u003c/title . 4. The config, line by line apps/host/vite.config.js - command is 'serve' or 'build' ; remotes use it to set base only for builds. - mode is development for vite , production for vite build , or whatever --mode says. 5. Environment variables - import.meta.env.VITE in client code; MODE , DEV , PROD , BASE URL , SSR are built in. - Files: .env , .env.local , .env. mode , .env. mode .local . See ENVIRONMENTS.md ENVIRONMENTS.md . - process.env does not exist in browser code. Replace process.env.VUE APP X with import.meta.env.VITE X . 6. CSS and Sass - Install sass or sass-embedded , faster and use \u003cstyle lang=\"scss\" . No loader config. - Vite 7 uses the modern compiler API: use @use / @forward , sass:map , sass:color . @import and global functions like map-get still compile but print deprecation warnings. - additionalData prepends code to every Sass file. Put only variables, mixins and functions there, never real CSS rules, or they get duplicated per component. - CSS Modules: name files .module.scss . PostCSS: add postcss.config.js , it's picked up automatically. - Inline \u003cstyle in index.html is left as-is: ideal for critical CSS see each app's index.html . 7. Static assets - import logo from './logo.png' gives a hashed URL. ?raw , ?url , ?inline , ?worker suffixes are available. - Files in public/ are referenced by absolute path /favicon.svg and not hashed. - new URL './img.png', import.meta.url .href works for dynamic paths. 8. Auto import unplugin auto-imports.d.ts and components.d.ts are generated on the first dev / build . Keep entry files main.js explicit: it makes bootstrap code readable. 9. Code splitting - = import './View.vue' in routes creates a separate chunk. - build.rollupOptions.output.manualChunks replaces the removed splitVendorChunkPlugin if you need vendor chunks. 10. Dev server and preview - server.port , server.strictPort , server.proxy replace webpack-dev-server proxy , server.origin absolute asset URLs; the remotes use it so the host can load their dev modules , server.cors Vite 6+ restricts CORS to localhost origins by default; remotes enable it explicitly . - vite preview serves dist/ for a local production check. It is not a production server. 11. Module Federation in Vite 7 See ARCHITECTURE.md ARCHITECTURE.md 1-module-federation . Key points: - @module-federation/vite supports Vite 5 through 8, dev + build. - Remotes need an absolute base in production VITE PUBLIC URL and server.origin in dev. - Use type: 'module' for Vite remotes. Use type: 'var' only for webpack/rspack remotes. - bundleAllCSS: true makes a remote's CSS load with its exposed module. 12. Upgrading an existing Vite 5/6 app to 7 1. Upgrade Node to 22 LTS or 20.19+ . 2. npm i -D vite@^7 @vitejs/plugin-vue@^6 . 3. Remove css.preprocessorOptions.scss.api: 'legacy' if present and fix Sass deprecations. 4. Remove splitVendorChunkPlugin use manualChunks . 5. If you must support older browsers than Safari 16 / Chrome 107, set build.target explicitly or use @vitejs/plugin-legacy . 6. Check plugins declare vite@^7 in peer dependencies. "},{"id":"migration","title":"webpack → Vite migration","toc":[{"depth":2,"text":"0. Strategy","anchor":"migration--0-strategy"},{"depth":2,"text":"1. Dependencies","anchor":"migration--1-dependencies"},{"depth":2,"text":"2. index.html moves to the project root","anchor":"migration--2-indexhtml-moves-to-the-project-root"},{"depth":2,"text":"3. Config: vue.config.js / webpack.config.js → vite.config.js","anchor":"migration--3-config-vueconfigjs-webpackconfigjs-viteconfigjs"},{"depth":2,"text":"4. Environment variables","anchor":"migration--4-environment-variables"},{"depth":2,"text":"5. Module syntax","anchor":"migration--5-module-syntax"},{"depth":2,"text":"6. Sass","anchor":"migration--6-sass"},{"depth":2,"text":"7. Auto-imports instead of global registration","anchor":"migration--7-auto-imports-instead-of-global-registration"},{"depth":2,"text":"8. Vuex and axios in a micro-frontend","anchor":"migration--8-vuex-and-axios-in-a-micro-frontend"},{"depth":2,"text":"9. Module Federation: webpack → Vite","anchor":"migration--9-module-federation-webpack-vite"},{"depth":3,"text":"Remote","anchor":"migration--remote"},{"depth":3,"text":"Host","anchor":"migration--host"},{"depth":3,"text":"Bootstrap file","anchor":"migration--bootstrap-file"},{"depth":3,"text":"Mixed bundlers during migration","anchor":"migration--mixed-bundlers-during-migration"},{"depth":2,"text":"10. Testing","anchor":"migration--10-testing"},{"depth":2,"text":"11. Checklist","anchor":"migration--11-checklist"}],"text":" Migrating from webpack Vue CLI / webpack 5 Module Federation to Vite 7 This guide takes a typical Vue CLI or hand-rolled webpack 5 Vue 3 micro-frontend setup and moves it to the structure used in this repo. Each step maps a webpack concept to its Vite equivalent, with the real file from this repo as the target. 0. Strategy Migrate one app at a time, remotes first or host first , never big-bang. With Module Federation 2.0 a Vite host can consume webpack remotes and vice versa see step 9 , so the system keeps working while apps move over. Recommended order: 1. Upgrade the webpack app to Vue 3.5 and Node 22 first no build changes . 2. Migrate one leaf remote fewest dependents to Vite. 3. Migrate the remaining remotes. 4. Migrate the host last. 1. Dependencies package.json scripts: webpack / Vue CLI Vite --- --- vue-cli-service serve / webpack serve vite vue-cli-service build / webpack --mode production vite build vue-cli-service build --mode staging vite build --mode staging none vite preview Add \"type\": \"module\" to package.json so vite.config.js can use ESM. 2. index.html moves to the project root webpack Vite --- --- public/index.html + HtmlWebpackPlugin index.html at app root \u003c%= htmlWebpackPlugin.options.title % %VITE APP TITLE% \u003c%= BASE URL % favicon.ico /favicon.ico bundle injected automatically add \u003cscript type=\"module\" src=\"/src/main.js\" \u003c/script yourself Inline critical CSS can stay in \u003cstyle inside index.html see apps/host/index.html . 3. Config: vue.config.js / webpack.config.js → vite.config.js webpack Vite vite.config.js --- --- entry: './src/main.js' from index.html output.publicPath / publicPath base output.path / outputDir build.outDir default dist resolve.alias '@' resolve.alias '@' Vue CLI added it implicitly, Vite does not resolve.extensions incl. .vue Always write .vue in imports module.rules vue-loader @vitejs/plugin-vue module.rules babel-loader not needed esbuild for TS/JSX, modern targets module.rules sass/css/style-loader built in: just install sass css.loaderOptions.sass.additionalData css.preprocessorOptions.scss.additionalData file-loader / url-loader / asset modules built in; build.assetsInlineLimit DefinePlugin define devServer.port / proxy / headers server.port / server.proxy / server.headers devServer.historyApiFallback built in optimization.splitChunks build.rollupOptions.output.manualChunks ModuleFederationPlugin federation from @module-federation/vite CopyWebpackPlugin public public/ folder require.context import.meta.glob 4. Environment variables webpack / Vue CLI Vite --- --- VUE APP API URL VITE API BASE URL process.env.VUE APP API URL import.meta.env.VITE API BASE URL process.env.NODE ENV === 'production' import.meta.env.PROD process.env.BASE URL import.meta.env.BASE URL .env.development , .env.production same names, same idea Quick rename: If a library reads process.env.X at runtime, add define: { 'process.env.X': JSON.stringify value } . 5. Module syntax - require './x' → import x from './x' ; module.exports → export default . - require.context './modules', false, /\\.js$/ common for auto-registering Vuex modules : - Dynamic image paths: require \\ @/assets/${name}.png\\ → new URL \\ ../assets/${name}.png\\ , import.meta.url .href . 6. Sass - ~ prefix for node modules imports @import '~bootstrap/scss/x' → drop it: @use 'bootstrap/scss/x' . - node-sass → sass Dart Sass . Vite 7 only supports the modern API. - Move @import 'variables' to @use 'variables' as and inject via additionalData see apps/ /vite.config.js . - /deep/ and → :deep .child in scoped styles. 7. Auto-imports instead of global registration webpack apps often register components globally in main.js app.component 'BaseButton', ... or with require.context . Replace with: You can keep explicit imports, the plugins only fill in what's missing. 8. Vuex and axios in a micro-frontend These don't change between bundlers, but migrating is a good moment to fix two common webpack-era MFE problems: 1. Shared store by accident. If vuex was shared: { vuex: { singleton: true } } and remotes called useStore , they could get the host's store. Use one store per app with its own injection key and provide it from the remote root apps/shell-a/src/App.vue . 2. Global axios defaults. axios.defaults.baseURL = ... in one app leaks into others when axios is shared. Use axios.create per app and remove axios from shared apps/ /src/services/http.js . 9. Module Federation: webpack → Vite Remote Host Bootstrap file webpack MF needs an async boundary main.js → import './bootstrap' to avoid \"Shared module is not available for eager consumption\". Delete it in Vite: the plugin initialises sharing before your entry runs. Put the code back in main.js . Mixed bundlers during migration - Vite host → webpack remote: declare the remote with type: 'var' and its global name. - webpack host → Vite remote: add varFilename: 'varRemoteEntry.js' to the Vite remote and point the webpack host at that file shellA@https://.../varRemoteEntry.js . - Keep shared versions compatible on both sides. 10. Testing jest + vue-jest → Vitest npm i -D vitest @vue/test-utils jsdom . It reuses vite.config.js aliases, plugins . Most Jest APIs work with vi instead of jest . 11. Checklist - Node 20.19+ / 22.12+ - index.html at root with \u003cscript type=\"module\" src=\"/src/main.js\" - vite.config.js with @vitejs/plugin-vue and the @ alias - VUE APP → VITE , process.env → import.meta.env - No require / require.context left - All .vue imports include the extension - sass installed, ~ imports removed, /deep/ → :deep - webpack MF bootstrap.js async boundary removed - Remotes: absolute base for builds, server.origin for dev - axios and vuex not in shared ; per-app instances - vite build && vite preview works; host loads every remote - CI updated dist/ output, new scripts "},{"id":"host","title":"Host · :5000","toc":[{"depth":2,"text":"Run","anchor":"host--run"},{"depth":2,"text":"Features","anchor":"host--features"},{"depth":2,"text":"Routes","anchor":"host--routes"},{"depth":2,"text":"Login modes","anchor":"host--login-modes"},{"depth":2,"text":"Adding a third remote","anchor":"host--adding-a-third-remote"},{"depth":2,"text":"Env files","anchor":"host--env-files"},{"depth":2,"text":"Migrating this app from webpack","anchor":"host--migrating-this-app-from-webpack"}],"text":" Host app @mfe/host · port 5000 The container application. It owns the URL, the login , the layout and the header, and loads the two remote micro-frontends at runtime with Module Federation. Run Open http://localhost:5000 → you're redirected to /login . Sign in with demo / demo123 . Features Feature Where --- --- Sample login mock or dummyjson src/views/LoginView.vue , src/store/modules/auth.js , src/services/authService.js Route guard requiresAuth , guestOnly src/router/index.js Own Vuex store + key hostStoreKey src/store/index.js , src/composables/useHostStore.js Own axios instance src/services/http.js Loading remotes safely src/utils/defineRemoteComponent.js , src/components/RemoteFallback.vue Listening to remote events src/App.vue → notifications module → header badges Inline critical CSS + boot splash index.html Sass tokens/mixins src/styles/ tokens.scss , global styles src/styles/main.scss Routes Path View Guard --- --- --- /login LoginView guest only / HomeView dashboard auth /shell-a ShellAView → shellA/App auth /shell-b ShellBView → shellB/App auth NotFoundView Login modes VITE USE MOCK AUTH Credentials Behaviour --- --- --- true dev default demo / demo123 , guest / guest123 In-browser mock, 500 ms delay false emilys / emilyspass POST https://dummyjson.com/auth/login with the host axios instance The session is stored in sessionStorage 'mfe.auth' ; the remotes' own axios instances read the token from there. Logout clears it and broadcasts mfe:auth-changed . Adding a third remote 1. Add VITE SHELL C ENTRY to every .env. file of the host. 2. Add it to remotes in vite.config.js and to the fail-fast check list . 3. Create src/views/ShellCView.vue with defineRemoteComponent = import 'shellC/App' , 'Shell C' . 4. Add a route and a header link. Env files .env , .env.development , .env.localprod , .env.staging , .env.production , .env.example . Details: docs/ENVIRONMENTS.md ../../docs/ENVIRONMENTS.md . Migrating this app from webpack If this host used to be a Vue CLI / webpack 5 app, these are the concrete changes: Before webpack After this app --- --- vue.config.js with ModuleFederationPlugin { remotes: { shellA: 'shellA@http://localhost:5001/remoteEntry.js' } } vite.config.js → federation { remotes: { shellA: { type: 'module', entry: env.VITE SHELL A ENTRY, … } } } src/main.js → import './bootstrap' async boundary Single src/main.js , no bootstrap file public/index.html with \u003c%= htmlWebpackPlugin.options.title % Root index.html with %VITE APP TITLE% and inline critical CSS VUE APP SHELL A URL / process.env VITE SHELL A ENTRY / loadEnv in config, import.meta.env in code css.loaderOptions.sass.additionalData: '@import \"@/styles/vars\";' css.preprocessorOptions.scss.additionalData: '@use \"@/styles/tokens\" as ;' app.component ... global registration unplugin-vue-components src/components auto-registered axios.defaults.baseURL = ... axios.create in src/services/http.js app.use store app.use store, hostStoreKey + useHostStore devServer: { port: 5000, historyApiFallback: true } server: { port, strictPort: true } history fallback built in Full guide: docs/WEBPACK TO VITE MIGRATION.md ../../docs/WEBPACK TO VITE MIGRATION.md . "},{"id":"shell-a","title":"Shell A · :5001","toc":[{"depth":2,"text":"Run","anchor":"shell-a--run"},{"depth":2,"text":"Public API (what the host can rely on)","anchor":"shell-a--public-api-what-the-host-can-rely-on"},{"depth":2,"text":"Internals","anchor":"shell-a--internals"},{"depth":3,"text":"Why the store is provided in App.vue","anchor":"shell-a--why-the-store-is-provided-in-appvue"},{"depth":3,"text":"CSS rules for remotes","anchor":"shell-a--css-rules-for-remotes"},{"depth":2,"text":"Env files","anchor":"shell-a--env-files"},{"depth":2,"text":"Migrating this remote from webpack","anchor":"shell-a--migrating-this-remote-from-webpack"}],"text":" Shell A @mfe/shell-a · port 5001 Remote micro-frontend: product catalog + cart . It exposes ./App through Module Federation and can also run standalone. Run Inside the host it is mounted at /shell-a . Public API what the host can rely on Item Value --- --- Federation name shellA Remote entry \u003cVITE PUBLIC URL remoteEntry.js dev: http://localhost:5001/remoteEntry.js Exposed module ./App → src/App.vue host: import 'shellA/App' Props user object, optional , standalone boolean Events published mfe:cart-updated → { count, items } Reads sessionStorage 'mfe.auth' token for its axios instance Keep this surface small and backwards compatible: the host and this remote deploy independently. Internals Concern Where --- --- Product search debounced + grid src/components/SearchBar.vue , ProductGrid.vue , ProductCard.vue Cart panel src/components/CartPanel.vue Own Vuex store + key shellAStoreKey modules: catalog , cart src/store/ , provided in src/App.vue Store accessor auto-imported src/composables/ Own axios instance → https://dummyjson.com src/services/http.js Offline fixtures network fallback / VITE USE MOCK API=true src/services/fixtures/ Event bus own copy src/utils/mfeBus.js Sass tokens src/styles/ tokens.scss Standalone bootstrap src/main.js never runs inside the host Inline critical CSS + standalone layout index.html never loaded by the host Why the store is provide d in App.vue Inside the host, this component renders in the host's Vue app. A bare useStore would not find this remote's store. provide shellAStoreKey, store in the root and useStore shellAStoreKey in children keep the store private and identical in both modes. CSS rules for remotes bundleAllCSS: true ships every CSS file this remote imports together with ./App . So: scoped styles only, a root class .shell-a on the root element, and no global selectors body , app in .vue / .scss files. Standalone-only styles go inline in index.html . Env files File VITE PUBLIC URL --- --- .env.development http://localhost:5001/ .env.localprod http://localhost:5001/ .env.staging https://shell-a.staging.example.com/ .env.production https://shell-a.example.com/ VITE PUBLIC URL becomes server.origin in dev and base in builds. See docs/ENVIRONMENTS.md ../../docs/ENVIRONMENTS.md . Migrating this remote from webpack Before webpack 5 After this app --- --- new ModuleFederationPlugin { name: 'shellA', filename: 'remoteEntry.js', exposes: { './App': './src/App.vue' } } federation { name: 'shellA', filename: 'remoteEntry.js', exposes: { './App': './src/App.vue' }, bundleAllCSS: true } output.publicPath: 'http://localhost:5001/' or 'auto' base: command === 'build' ? env.VITE PUBLIC URL : '/' + server.origin devServer.headers: { 'Access-Control-Allow-Origin': ' ' } server.cors: true , preview.cors: true main.js → import './bootstrap' Plain main.js shared: { vue, vuex, axios } shared: { vue } only; private Vuex + axios MiniCssExtractPlugin + style-loader Built-in CSS + bundleAllCSS VUE APP API URL VITE API BASE URL While the host is still on webpack, add varFilename: 'varRemoteEntry.js' here and point the webpack host at shellA@http://localhost:5001/varRemoteEntry.js . Full guide: docs/WEBPACK TO VITE MIGRATION.md ../../docs/WEBPACK TO VITE MIGRATION.md . "},{"id":"shell-b","title":"Shell B · :5002","toc":[{"depth":2,"text":"Run","anchor":"shell-b--run"},{"depth":2,"text":"Public API (what the host can rely on)","anchor":"shell-b--public-api-what-the-host-can-rely-on"},{"depth":2,"text":"Internals","anchor":"shell-b--internals"},{"depth":3,"text":"Why the store is provided in App.vue","anchor":"shell-b--why-the-store-is-provided-in-appvue"},{"depth":3,"text":"CSS rules for remotes","anchor":"shell-b--css-rules-for-remotes"},{"depth":2,"text":"Env files","anchor":"shell-b--env-files"},{"depth":2,"text":"Migrating this remote from webpack","anchor":"shell-b--migrating-this-remote-from-webpack"}],"text":" Shell B @mfe/shell-b · port 5002 Remote micro-frontend: task board . It exposes ./App through Module Federation and can also run standalone. Run Inside the host it is mounted at /shell-b . Public API what the host can rely on Item Value --- --- Federation name shellB Remote entry \u003cVITE PUBLIC URL remoteEntry.js dev: http://localhost:5002/remoteEntry.js Exposed module ./App → src/App.vue host: import 'shellB/App' Props user object, optional , standalone boolean Events published mfe:tasks-updated → { open, total } Reads sessionStorage 'mfe.auth' token for its axios instance Keep this surface small and backwards compatible: the host and this remote deploy independently. Internals Concern Where --- --- Add / toggle / delete tasks, progress bar src/components/AddTaskForm.vue , TaskList.vue , TaskItem.vue Filters all / open / done src/components/TaskFilters.vue Own Vuex store + key shellBStoreKey modules: tasks src/store/ , provided in src/App.vue Store accessor auto-imported src/composables/ Own axios instance → https://jsonplaceholder.typicode.com src/services/http.js Offline fixtures network fallback / VITE USE MOCK API=true src/services/fixtures/ Event bus own copy src/utils/mfeBus.js Sass tokens src/styles/ tokens.scss Standalone bootstrap src/main.js never runs inside the host Inline critical CSS + standalone layout index.html never loaded by the host Why the store is provide d in App.vue Inside the host, this component renders in the host's Vue app. A bare useStore would not find this remote's store. provide shellBStoreKey, store in the root and useStore shellBStoreKey in children keep the store private and identical in both modes. CSS rules for remotes bundleAllCSS: true ships every CSS file this remote imports together with ./App . So: scoped styles only, a root class .shell-b on the root element, and no global selectors body , app in .vue / .scss files. Standalone-only styles go inline in index.html . Env files File VITE PUBLIC URL --- --- .env.development http://localhost:5002/ .env.localprod http://localhost:5002/ .env.staging https://shell-b.staging.example.com/ .env.production https://shell-b.example.com/ VITE PUBLIC URL becomes server.origin in dev and base in builds. See docs/ENVIRONMENTS.md ../../docs/ENVIRONMENTS.md . Migrating this remote from webpack Before webpack 5 After this app --- --- new ModuleFederationPlugin { name: 'shellB', filename: 'remoteEntry.js', exposes: { './App': './src/App.vue' } } federation { name: 'shellB', filename: 'remoteEntry.js', exposes: { './App': './src/App.vue' }, bundleAllCSS: true } output.publicPath: 'http://localhost:5002/' or 'auto' base: command === 'build' ? env.VITE PUBLIC URL : '/' + server.origin devServer.headers: { 'Access-Control-Allow-Origin': ' ' } server.cors: true , preview.cors: true main.js → import './bootstrap' Plain main.js shared: { vue, vuex, axios } shared: { vue } only; private Vuex + axios MiniCssExtractPlugin + style-loader Built-in CSS + bundleAllCSS VUE APP API URL VITE API BASE URL While the host is still on webpack, add varFilename: 'varRemoteEntry.js' here and point the webpack host at shellB@http://localhost:5002/varRemoteEntry.js . Full guide: docs/WEBPACK TO VITE MIGRATION.md ../../docs/WEBPACK TO VITE MIGRATION.md . "}];
+  const INDEX = [{"id":"overview","title":"Overview","toc":[{"depth":3,"text":"What&#39;s inside","anchor":"overview--whats-inside"},{"depth":2,"text":"Quick start","anchor":"overview--quick-start"},{"depth":3,"text":"Production build, locally","anchor":"overview--production-build-locally"},{"depth":3,"text":"All scripts (root)","anchor":"overview--all-scripts-root"},{"depth":2,"text":"Repository layout","anchor":"overview--repository-layout"},{"depth":2,"text":"Documentation","anchor":"overview--documentation"},{"depth":2,"text":"Troubleshooting","anchor":"overview--troubleshooting"}],"text":" vue-mfe-vite A complete, working Vue 3 + Vite 7 micro-frontend monorepo built with Module Federation . App Role Port Exposes / consumes Theme --- --- --- --- --- apps/host apps/host/README.md Container: routing, login , layout, header, ui-dev library 5000 consumes shellA/App , shellB/App ; exposes ./ui-dev green apps/shell-a apps/shell-a/README.md Remote: product catalog + cart 5001 exposes ./App ; consumes host/ui-dev indigo apps/shell-b apps/shell-b/README.md Remote: task board 5002 exposes ./App ; consumes host/ui-dev teal What's inside - Vite 7 vite@^7.3 with @vitejs/plugin-vue@6 - Plain JavaScript as .mjs everywhere configs, scripts, source . No TypeScript, no generated .d.ts - vite.config.mjs driven by .env. mode through each app's config/env.mjs ports, URLs, CORS, sourcemaps, remote entries - shared.federation.json in each remote : the federation contract exposes, remotes, shared , turned into plugin options by config/federation.mjs - ui-dev shared UI library owned by the host and federated to the remotes as host/ui-dev \u003cUiButton , \u003cUiCard , \u003cUiInput , …, auto-resolved, no imports - Module Federation via @module-federation/vite https://module-federation.io/integrations/build-tool/vite works in dev and build - Sass modern compiler API with per-app design tokens injected through additionalData - Critical CSS inline in each index.html background + boot splash before JS loads - Auto import : unplugin-auto-import vue, vuex, vue-router, own composables and unplugin-vue-components no manual component registration - Vuex 4: one independent store per app , each installed/provided under its own injection key - axios: one private instance per app own baseURL, timeout, interceptors and not shared through federation - Sample login in the host route guard, session in sessionStorage - Cross-app communication with a tiny window CustomEvent bus mfe: instead of shared state - Per-app env files for development / localprod / staging / production - Offline fixtures, so the demo still works behind a proxy with no internet Quick start Requirements: Node 20.19+ or 22.12+ Vite 7 requirement and npm 10+. Open http://localhost:5000 and sign in with demo / demo123 or guest / guest123 . Each remote also runs on its own: http://localhost:5001 and http://localhost:5002. Production build, locally All scripts root Script What it does --- --- npm run dev All three dev servers in parallel concurrently npm run dev:host / dev:shell-a / dev:shell-b One app only npm run build Production build .env.production , remotes first, then host npm run build:staging Staging build .env.staging npm run build:localprod Production bundles pointing at localhost .env.localprod npm run preview Serve every dist/ with vite preview --mode localprod npm run start build:localprod + preview npm run docs Build the docs site and serve it on :5050 npm run docs:build Regenerate docs/site/index.html from the Markdown npm run clean Remove dist/ and federation temp folders Repository layout Documentation Developer docs site: open docs/site/index.html docs/site/index.html in a browser works from disk , or run npm run docs to serve it at http://localhost:5050. It is generated from the Markdown files below by scripts/build-docs.mjs ; after editing any .md , run npm run docs:build . - Architecture docs/ARCHITECTURE.md - How vite.config.mjs is built env + shared.federation.json docs/VITE CONFIG.md - ui-dev shared UI library docs/UI DEV LIBRARY.md - Environments & env files docs/ENVIRONMENTS.md - Vite 7 guide docs/VITE7 GUIDE.md - Migrating from webpack Vue CLI / webpack 5 Module Federation to Vite docs/WEBPACK TO VITE MIGRATION.md - App READMEs: host apps/host/README.md · shell-a apps/shell-a/README.md · shell-b apps/shell-b/README.md Troubleshooting Symptom Fix --- --- \"Shell A is unavailable\" card in the host The remote isn't running. npm run dev at the root starts all apps. Check VITE SHELL A ENTRY . Standalone remote shows nothing / RUNTIME-008 for :5000/remoteEntry.js Remotes load host/ui-dev from the host. Start the host too npm run dev starts all three . missing env for mode \"…\" on start Add the listed keys to .env. mode of that app see .env.example . Port already in use Ports are strictPort . Free 5000–5002 or change VITE PORT and the host's VITE SHELL ENTRY . Remote chunks 404 in production The remote's VITE PUBLIC URL build base must be the URL it is deployed at. Products / tasks show fixture data The public APIs dummyjson / jsonplaceholder were unreachable; the services fell back to src/services/fixtures . Unsupported engine / Vite won't start Upgrade Node to 20.19+ or 22.12+. "},{"id":"architecture","title":"Architecture","toc":[{"depth":2,"text":"1. Module Federation","anchor":"architecture--1-module-federation"},{"depth":3,"text":"Shared UI library","anchor":"architecture--shared-ui-library"},{"depth":3,"text":"What is shared and why","anchor":"architecture--what-is-shared-and-why"},{"depth":2,"text":"2. Independent Vuex stores","anchor":"architecture--2-independent-vuex-stores"},{"depth":2,"text":"3. Private axios instances","anchor":"architecture--3-private-axios-instances"},{"depth":2,"text":"4. Authentication contract","anchor":"architecture--4-authentication-contract"},{"depth":2,"text":"5. Event bus (src/utils/mfeBus.mjs, one copy per app)","anchor":"architecture--5-event-bus-srcutilsmfebusmjs-one-copy-per-app"},{"depth":2,"text":"6. Styling","anchor":"architecture--6-styling"},{"depth":2,"text":"7. Failure isolation","anchor":"architecture--7-failure-isolation"}],"text":" Architecture 1. Module Federation Plugin: @module-federation/vite Module Federation 2.0 runtime, maintained by the Module Federation org and recommended by the Vite team . Unlike the older @originjs/vite-plugin-federation , remotes work in dev mode , so you get HMR in every app while running the host. Federation runs both ways : App Exposes Consumes --- --- --- host ./ui-dev shared UI library shellA/App , shellB/App shell-a ./App host/ui-dev shell-b ./App host/ui-dev Remotes read their options from shared.federation.json see How vite.config.mjs is built VITE CONFIG.md : Host keeps its options inline in apps/host/vite.config.mjs : The host imports shellA/App like a normal module. src/utils/defineRemoteComponent.mjs wraps it in defineAsyncComponent with loading and error components, so a remote that is down shows a friendly card instead of breaking the page. shareStrategy: 'loaded-first' stops the runtime from fetching every remote's remoteEntry.js up front. Without it, a standalone shell-b that loads host/ui-dev would also try to fetch shell-a. Shared UI library See ui-dev UI DEV LIBRARY.md . Remotes write \u003cUiButton with no import, and a components resolver turns it into import { UiButton } from 'host/ui-dev' . Each remote's exposed entry src/expose/App.mjs awaits host/ui-dev before the host renders it. What is shared and why Package / module Shared? Reason --- --- --- vue ✅ singleton Remotes render inside the host's Vue app; two Vue runtimes would break reactivity and provide/inject . host/ui-dev ✅ exposed module One component library, owned and served by the host. vue-router ❌ Only the host routes. Remotes expose components, not routers. vuex ❌ Each app must own its store and its Vuex version. axios ❌ Each app owns its HTTP client, interceptors and defaults requirement . 2. Independent Vuex stores Because remotes render inside the host's Vue app , a bare useStore in a remote would resolve the host's store or nothing . To keep stores isolated: 1. Every app creates its store and its own injection key : hostStoreKey , shellAStoreKey , shellBStoreKey src/store/index.mjs . 2. The host installs its store with app.use store, hostStoreKey . 3. Each remote's root App.vue calls provide shellAStoreKey, store , so its whole subtree resolves its own store, both inside the host and standalone. 4. Components use auto-imported helpers: useHostStore , useShellAStore , useShellBStore src/composables . All modules are namespaced: true . 3. Private axios instances src/services/http.mjs exists in every app and calls axios.create : App baseURL dev timeout Header --- --- --- --- host https://dummyjson.com VITE API TIMEOUT 10s X-Client-App: host shell-a https://dummyjson.com 8s X-Client-App: shell-a shell-b https://jsonplaceholder.typicode.com 8s X-Client-App: shell-b Interceptors are per instance. The global axios default instance is never configured, and axios is not in shared , so every bundle carries its own copy. 4. Authentication contract - The host logs in store/modules/auth.mjs → services/authService.mjs . - The session { user, token } is written to sessionStorage 'mfe.auth' . - Each remote's axios request interceptor reads the token from that key and sends Authorization: Bearer \u003ctoken . - The host also passes user as a prop to each remote root component. - Login/logout broadcasts mfe:auth-changed . Mock login: demo / demo123 , guest / guest123 . Set VITE USE MOCK AUTH=false to use the real dummyjson endpoint emilys / emilyspass . 5. Event bus src/utils/mfeBus.mjs , one copy per app Event Publisher → Subscriber Payload --- --- --- mfe:auth-changed host → remotes { user } mfe:cart-updated shell-a → host { count, items } mfe:tasks-updated shell-b → host { open, total } The host listens in App.vue and commits into its notifications module, which drives the header badges and dashboard cards. 6. Styling - index.html of each app carries inline critical CSS background, font, splash . Remote index.html files are only used standalone, so their inline CSS never reaches the host. - src/styles/ tokens.scss holds variables, mixins and functions only, injected into every \u003cstyle lang=\"scss\" via css.preprocessorOptions.scss.additionalData . - Remote components are scoped and namespaced by a root class .shell-a , .shell-b . With bundleAllCSS: true all CSS imported by a remote ships with ./App , so keep global selectors out of remotes. Standalone-only layout lives inline in index.html . 7. Failure isolation - Remote unreachable → RemoteFallback error card host keeps working . - Host unreachable → standalone remotes can't load host/ui-dev run the host too . - API unreachable → the remote's service falls back to src/services/fixtures . - Remote throws during render → only that route's view is affected. "},{"id":"vite-config","title":"vite.config.mjs + env","toc":[{"depth":2,"text":"1. config/env.mjs: load and validate .env.[mode]","anchor":"vite-config--1-configenvmjs-load-and-validate-envmode"},{"depth":2,"text":"2. shared.federation.json (remotes)","anchor":"vite-config--2-sharedfederationjson-remotes"},{"depth":2,"text":"3. Host (apps/host/vite.config.mjs)","anchor":"vite-config--3-host-appshostviteconfigmjs"},{"depth":2,"text":"4. No TypeScript","anchor":"vite-config--4-no-typescript"},{"depth":2,"text":"5. Why .mjs","anchor":"vite-config--5-why-mjs"}],"text":" How vite.config.mjs is built Every app's config is plain ESM .mjs , no TypeScript and is driven by two inputs : Input What it holds Who has it --- --- --- .env + .env. mode everything environment-specific: ports, URLs, CORS, sourcemaps, remote entry URLs all apps shared.federation.json the federation contract : name, exposes, remotes by env key , shared deps remotes only shell-a, shell-b The host keeps its federation options inline in vite.config.mjs . 1. config/env.mjs : load and validate .env. mode - npm run dev → mode development → .env + .env.development + .local overrides . - npm run build:staging → .env.staging . npm run preview → --mode localprod . - Required keys: VITE APP NAME , VITE PORT , VITE PUBLIC URL , VITE API BASE URL , plus every remote entry key host: VITE SHELL A ENTRY , VITE SHELL B ENTRY ; remotes: whatever shared.federation.json lists as entryEnv , i.e. VITE HOST ENTRY . Missing keys stop the dev server/build with a clear message. - Returns typed values used by the config: Returned From Used for --- --- --- port VITE PORT server.port , preview.port devHost VITE DEV HOST server.host , preview.host open VITE OPEN server.open publicUrl / origin VITE PUBLIC URL build base , dev server.origin corsOrigins VITE CORS ORIGINS server.cors / preview.cors allow-list sourcemap VITE SOURCEMAP build.sourcemap dropConsole VITE DROP CONSOLE esbuild.pure console.log/debug + esbuild.drop debugger appName , appEnv VITE APP NAME , VITE APP ENV define: { APP NAME , APP ENV } raw everything remote entry URLs envBanner is a 10-line plugin that prints the resolved values when Vite starts: 2. shared.federation.json remotes - remotes.\u003cname .entryEnv names the env key that holds the URL, so the JSON is identical in every environment and the URL changes per .env. mode . - notShared is documentation and a guard: config/federation.mjs throws if a package appears in both shared and notShared , or if a shared package isn't in package.json . config/federation.mjs turns it into plugin options: 3. Host apps/host/vite.config.mjs 4. No TypeScript - All source and config files are .mjs / .vue with \u003cscript setup in JavaScript. - unplugin-auto-import and unplugin-vue-components run with dts: false , so no .d.ts files are generated. - jsconfig.json in each app gives editors the @/ alias and ESM resolution; it does not type-check checkJs: false . - Federated type generation is off dts: false in the federation options . 5. Why .mjs .mjs is always ESM in Node, independent of \"type\" in package.json , so config files, scripts scripts/build-docs.mjs and source files all share one unambiguous module format. Vite resolves .mjs by default resolve.extensions starts with .mjs , so imports can stay extension-less: import { http } from './http' finds http.mjs . "},{"id":"environments","title":"Environments","toc":[{"depth":2,"text":"Variables used by every app","anchor":"environments--variables-used-by-every-app"},{"depth":2,"text":"Host (apps/host)","anchor":"environments--host-appshost"},{"depth":2,"text":"Remotes (apps/shell-a, apps/shell-b)","anchor":"environments--remotes-appsshell-a-appsshell-b"},{"depth":2,"text":"npm run preview uses localprod","anchor":"environments--npm-run-preview-uses-localprod"},{"depth":2,"text":"Deploying to real environments","anchor":"environments--deploying-to-real-environments"},{"depth":3,"text":"Overriding at build time from CI","anchor":"environments--overriding-at-build-time-from-ci"}],"text":" Environments & env files Every app has the same set of files: File Loaded when Purpose --- --- --- .env always Values common to all modes name, title, port, timeout .env.development vite / npm run dev Local dev servers, localhost remote URLs .env.localprod vite build --mode localprod Production bundles that still point at localhost for vite preview .env.staging vite build --mode staging Staging domains / CDN .env.production vite build Production domains / CDN .env.example never documentation Every variable with a comment .env. mode .local that mode, on your machine Personal overrides, git-ignored Priority later wins : .env \u003c .env.local \u003c .env. mode \u003c .env. mode .local \u003c real shell environment variables. Only variables prefixed with VITE reach browser code import.meta.env.VITE . Never put secrets in these files: everything VITE ends up in the JS bundle. All values are loaded by each app's config/env.mjs and used in vite.config.mjs see How vite.config.mjs is built VITE CONFIG.md . Variables used by every app Variable development localprod staging production Used for --- --- --- --- --- --- VITE APP NAME in .env X-Client-App header, APP NAME VITE PORT 5000 / 5001 / 5002 in .env server.port , preview.port VITE DEV HOST localhost in .env server.host VITE APP ENV development localprod staging production APP ENV VITE PUBLIC URL http://localhost:500x/ http://localhost:500x/ https://…staging.example.com/ https://….example.com/ dev server.origin , build base VITE OPEN false false false false server.open VITE SOURCEMAP true true true false build.sourcemap VITE DROP CONSOLE false true false true strip console.log/debug + debugger VITE CORS ORIGINS see below server.cors / preview.cors VITE API TIMEOUT 10000 host / 8000 remotes in .env axios timeout Host apps/host Variable development / localprod staging production --- --- --- --- VITE PUBLIC URL http://localhost:5000/ https://staging.example.com/ https://app.example.com/ VITE CORS ORIGINS who may load host/ui-dev http://localhost:5001,http://localhost:5002 https://shell-a.staging.example.com,https://shell-b.staging.example.com https://shell-a.example.com,https://shell-b.example.com VITE SHELL A ENTRY http://localhost:5001/remoteEntry.js https://shell-a.staging.example.com/remoteEntry.js https://shell-a.example.com/remoteEntry.js VITE SHELL B ENTRY http://localhost:5002/remoteEntry.js https://shell-b.staging.example.com/remoteEntry.js https://shell-b.example.com/remoteEntry.js VITE API BASE URL https://dummyjson.com https://api.staging.example.com https://api.example.com VITE USE MOCK AUTH true false false config/env.mjs stops the dev server or build if VITE SHELL A ENTRY / VITE SHELL B ENTRY or any required key is missing for the current mode. Remotes apps/shell-a , apps/shell-b Variable development / localprod staging production --- --- --- --- VITE PUBLIC URL http://localhost:500x/ https://shell-x.staging.example.com/ https://shell-x.example.com/ VITE CORS ORIGINS who may load this remote http://localhost:5000 https://staging.example.com https://app.example.com VITE HOST URL http://localhost:5000/ https://staging.example.com/ https://app.example.com/ VITE HOST ENTRY where host/ui-dev comes from http://localhost:5000/remoteEntry.js https://staging.example.com/remoteEntry.js https://app.example.com/remoteEntry.js VITE API BASE URL dummyjson A / jsonplaceholder B same same VITE USE MOCK API false false false VITE HOST ENTRY is the env key named in shared.federation.json → remotes.host.entryEnv . VITE PUBLIC URL is the most important remote variable: - dev : becomes server.origin , so the remote's dev assets are requested from :5001 even though the page is the host on :5000 . - build : becomes Vite's base . remoteEntry.js imports its chunks relative to this URL. If it's wrong, the host loads remoteEntry.js and then 404s on every chunk. The host also uses an absolute base in builds, because it is a remote too it serves ui-dev . npm run preview uses localprod vite preview defaults to mode production , which would load the example.com URLs and CORS lists. Every app's preview script is therefore vite preview --mode localprod , which matches npm run build:localprod and npm run start runs both . Deploying to real environments 1. Replace example.com URLs in .env.staging / .env.production of all three apps. 2. Build and deploy the remotes first npm run build:staging -w @mfe/shell-a , … . 3. Build and deploy the host. Changes to ui-dev must stay backwards compatible, because the already-deployed remotes load it from the host. 4. Every app must send CORS headers for the apps that load it remotes → host origin, host → remote origins for ui-dev ; see VITE CORS ORIGINS for remoteEntry.js and chunks Access-Control-Allow-Origin , or all apps can be served from the same domain under different paths, e.g. https://app.example.com/mfe/shell-a/ then use that as VITE PUBLIC URL . 5. Serve remoteEntry.js with Cache-Control: no-cache ; hashed chunks can be cached forever. Overriding at build time from CI Shell variables take priority over every .env file. "},{"id":"ui-dev","title":"ui-dev UI library","toc":[{"depth":2,"text":"How each app gets it","anchor":"ui-dev--how-each-app-gets-it"},{"depth":3,"text":"Host side (apps/host/vite.config.mjs)","anchor":"ui-dev--host-side-appshostviteconfigmjs"},{"depth":3,"text":"Remote side (apps/shell-*/vite.config.mjs + shared.federation.json)","anchor":"ui-dev--remote-side-appsshell-viteconfigmjs-sharedfederationjson"},{"depth":3,"text":"Why the remotes await import(&#39;host/ui-dev&#39;) first","anchor":"ui-dev--why-the-remotes-await-importhostui-dev-first"},{"depth":2,"text":"Components","anchor":"ui-dev--components"},{"depth":2,"text":"Theming","anchor":"ui-dev--theming"},{"depth":2,"text":"Adding a component","anchor":"ui-dev--adding-a-component"},{"depth":2,"text":"Rules (it&#39;s a shared contract)","anchor":"ui-dev--rules-its-a-shared-contract"}],"text":" ui-dev: the shared UI component library ui-dev is a small Vue 3 component library that lives in the host apps/host/src/ui-dev and is shared with the remotes through Module Federation as host/ui-dev . There is no npm package and no separate build: the host serves it from its own remoteEntry.js . How each app gets it App How components are resolved Source --- --- --- host unplugin-vue-components with dirs: 'src/components', 'src/ui-dev/components' local files no federation shell-a / shell-b unplugin-vue-components resolver: any \u003cUiXxx → import { UiXxx } from 'host/ui-dev' federated, loaded at runtime from VITE HOST ENTRY So in every app you just write the tag, with no import: Host side apps/host/vite.config.mjs src/main.mjs imports ./ui-dev/styles/ui-dev.css so the host's own pages get the tokens. Remote side apps/shell- /vite.config.mjs + shared.federation.json Why the remotes await import 'host/ui-dev' first host/ui-dev is a federated module, so it arrives asynchronously . A component whose setup runs before it has arrived would see UiButton === undefined . Both entry points of a remote therefore wait for it: - src/expose/App.mjs what the host imports as shellA/App : await import 'host/ui-dev' , then re-exports App.vue . - src/main.mjs standalone : await import 'host/ui-dev' before createApp .mount . Components Component Props Slots / events --- --- --- UiButton variant primary · secondary · ghost · danger, size sm · md · lg, type , loading , disabled , block default slot UiCard as tag , padding px , interactive default, header , footer UiInput v-model , label , type , hint , error ; other attrs go to \u003cinput , class / style to the wrapper UiBadge tone primary · success · warning · danger · info · neutral default slot UiSpinner size px , label a11y UiAlert tone info · success · warning · danger, title , dismissible default slot, @dismiss Theming All styles read CSS custom properties defined in ui-dev.css : --ui-primary , --ui-primary-contrast , --ui-danger , --ui-warning , --ui-info , --ui-success , --ui-text , --ui-muted , --ui-surface , --ui-border , --ui-radius , --ui-font . Each remote themes the library for its own subtree only: Adding a component 1. Create apps/host/src/ui-dev/components/UiThing.vue scoped CSS, use --ui- vars, import sibling Ui components explicitly . 2. Export it from apps/host/src/ui-dev/index.mjs named export and in the components map . 3. Host: nothing else, it's auto-registered. Remotes: nothing else, \u003cUiThing resolves to host/ui-dev . Rules it's a shared contract - Backwards compatible only. Remotes always get the version the host serves right now. Add props, don't rename or remove them; deprecate first. - UI DEV VERSION in index.mjs documents what's deployed; bump it on changes. - No store, router or axios usage inside ui-dev: components are presentational. - Remotes running standalone need the host running dev: npm run dev at the root starts all . "},{"id":"vite7","title":"Vite 7 guide","toc":[{"depth":2,"text":"1. Requirements and what changed in 7","anchor":"vite7--1-requirements-and-what-changed-in-7"},{"depth":2,"text":"2. How Vite works (vs. a bundler-first dev server)","anchor":"vite7--2-how-vite-works-vs-a-bundler-first-dev-server"},{"depth":2,"text":"3. Project anatomy","anchor":"vite7--3-project-anatomy"},{"depth":2,"text":"4. The config, line by line (apps/host/vite.config.mjs)","anchor":"vite7--4-the-config-line-by-line-appshostviteconfigmjs"},{"depth":2,"text":"5. Environment variables","anchor":"vite7--5-environment-variables"},{"depth":2,"text":"6. CSS and Sass","anchor":"vite7--6-css-and-sass"},{"depth":2,"text":"7. Static assets","anchor":"vite7--7-static-assets"},{"depth":2,"text":"8. Auto import (unplugin)","anchor":"vite7--8-auto-import-unplugin"},{"depth":2,"text":"9. Code splitting","anchor":"vite7--9-code-splitting"},{"depth":2,"text":"10. Dev server and preview","anchor":"vite7--10-dev-server-and-preview"},{"depth":2,"text":"11. Module Federation in Vite 7","anchor":"vite7--11-module-federation-in-vite-7"},{"depth":2,"text":"12. Upgrading an existing Vite 5/6 app to 7","anchor":"vite7--12-upgrading-an-existing-vite-56-app-to-7"}],"text":" Vite 7 guide with examples from this repo Vite 7 was released in June 2025. It is an evolutionary release: the config format is the same as Vite 5/6, but the platform baseline moved forward. This guide covers what you need to run, configure and reason about the apps in this repo. 1. Requirements and what changed in 7 Topic Vite 7 --- --- Node.js 20.19+ or 22.12+ Node 18 dropped . These versions can require ESM, so Vite ships as ESM only . Default build.target 'baseline-widely-available' Chrome/Edge 107, Firefox 104, Safari 16 . Was 'modules' . Sass Only the modern Sass API is supported. The legacy API api: 'legacy' was removed. Removed splitVendorChunkPlugin , hook-level enforce / transform in transformIndexHtml use order / handler . Environment API Still experimental; adds a buildApp hook for frameworks. Not needed for SPAs. Bundler Rollup 4 for builds, esbuild for dep pre-bundling. Rolldown is available as the drop-in rolldown-vite package and is the default in Vite 8 . Plugin Vue @vitejs/plugin-vue@6 supports Vite 5 → 8. Vitest Use Vitest 3.2+ with Vite 7. In this repo every app sets build.target: 'esnext' , because the Module Federation runtime uses top-level await . 2. How Vite works vs. a bundler-first dev server - Dev : Vite serves your source as native ES modules. Only the file the browser asks for is transformed .vue → JS, .scss → CSS . Dependencies in node modules are pre-bundled once with esbuild into node modules/.vite . Start-up time doesn't grow with app size, and HMR only touches the edited module. - Build : Rollup bundles, tree-shakes, code-splits and hashes for production. 3. Project anatomy index.html supports env replacement: \u003ctitle %VITE APP TITLE%\u003c/title . 4. The config, line by line apps/host/vite.config.mjs - command is 'serve' or 'build' ; every app uses it to set an absolute base only for builds. - mode is development for vite , production for vite build , or whatever --mode says. - The config file is vite.config.mjs : always ESM, no TypeScript. Details in VITE CONFIG.md VITE CONFIG.md . 5. Environment variables - In vite.config.mjs use loadEnv mode, root, '' this repo wraps it in config/env.mjs . import.meta.env is not available inside the config. - import.meta.env.VITE in client code; MODE , DEV , PROD , BASE URL , SSR are built in. - Files: .env , .env.local , .env. mode , .env. mode .local . See ENVIRONMENTS.md ENVIRONMENTS.md . - process.env does not exist in browser code. Replace process.env.VUE APP X with import.meta.env.VITE X . 6. CSS and Sass - Install sass or sass-embedded , faster and use \u003cstyle lang=\"scss\" . No loader config. - Vite 7 uses the modern compiler API: use @use / @forward , sass:map , sass:color . @import and global functions like map-get still compile but print deprecation warnings. - additionalData prepends code to every Sass file. Put only variables, mixins and functions there, never real CSS rules, or they get duplicated per component. - CSS Modules: name files .module.scss . PostCSS: add postcss.config.js , it's picked up automatically. - Inline \u003cstyle in index.html is left as-is: ideal for critical CSS see each app's index.html . 7. Static assets - import logo from './logo.png' gives a hashed URL. ?raw , ?url , ?inline , ?worker suffixes are available. - Files in public/ are referenced by absolute path /favicon.svg and not hashed. - new URL './img.png', import.meta.url .href works for dynamic paths. 8. Auto import unplugin Keep entry files main.mjs explicit: it makes bootstrap code readable. This repo runs both plugins with dts: false no TypeScript . Components can also come from a resolver : the remotes map every \u003cUiXxx tag to the federated module host/ui-dev : 9. Code splitting - = import './View.vue' in routes creates a separate chunk. - build.rollupOptions.output.manualChunks replaces the removed splitVendorChunkPlugin if you need vendor chunks. 10. Dev server and preview - server.port , server.strictPort , server.proxy replace webpack-dev-server proxy , server.origin absolute asset URLs; the remotes use it so the host can load their dev modules , server.cors Vite 6+ restricts CORS to localhost origins by default; remotes enable it explicitly . - vite preview serves dist/ for a local production check. It is not a production server. 11. Module Federation in Vite 7 See ARCHITECTURE.md ARCHITECTURE.md 1-module-federation . Key points: - @module-federation/vite supports Vite 5 through 8, dev + build. - Remotes need an absolute base in production VITE PUBLIC URL and server.origin in dev. - Use type: 'module' for Vite remotes. Use type: 'var' only for webpack/rspack remotes. - bundleAllCSS: true makes a remote's CSS load with its exposed module. 12. Upgrading an existing Vite 5/6 app to 7 1. Upgrade Node to 22 LTS or 20.19+ . 2. npm i -D vite@^7 @vitejs/plugin-vue@^6 . 3. Remove css.preprocessorOptions.scss.api: 'legacy' if present and fix Sass deprecations. 4. Remove splitVendorChunkPlugin use manualChunks . 5. If you must support older browsers than Safari 16 / Chrome 107, set build.target explicitly or use @vitejs/plugin-legacy . 6. Check plugins declare vite@^7 in peer dependencies. "},{"id":"migration","title":"webpack → Vite migration","toc":[{"depth":2,"text":"0. Strategy","anchor":"migration--0-strategy"},{"depth":2,"text":"1. Dependencies","anchor":"migration--1-dependencies"},{"depth":2,"text":"2. index.html moves to the project root","anchor":"migration--2-indexhtml-moves-to-the-project-root"},{"depth":2,"text":"3. Config: vue.config.js / webpack.config.js → vite.config.mjs","anchor":"migration--3-config-vueconfigjs-webpackconfigjs-viteconfigmjs"},{"depth":2,"text":"4. Environment variables","anchor":"migration--4-environment-variables"},{"depth":2,"text":"5. Module syntax","anchor":"migration--5-module-syntax"},{"depth":2,"text":"6. Sass","anchor":"migration--6-sass"},{"depth":2,"text":"7. Auto-imports instead of global registration","anchor":"migration--7-auto-imports-instead-of-global-registration"},{"depth":2,"text":"8. Vuex and axios in a micro-frontend","anchor":"migration--8-vuex-and-axios-in-a-micro-frontend"},{"depth":2,"text":"9. Module Federation: webpack → Vite","anchor":"migration--9-module-federation-webpack-vite"},{"depth":3,"text":"Remote","anchor":"migration--remote"},{"depth":3,"text":"Host","anchor":"migration--host"},{"depth":3,"text":"Bootstrap file","anchor":"migration--bootstrap-file"},{"depth":3,"text":"Mixed bundlers during migration","anchor":"migration--mixed-bundlers-during-migration"},{"depth":3,"text":"Shared UI kit","anchor":"migration--shared-ui-kit"},{"depth":3,"text":"Moving federation options out of the config (remotes)","anchor":"migration--moving-federation-options-out-of-the-config-remotes"},{"depth":2,"text":"10. JavaScript only, as .mjs","anchor":"migration--10-javascript-only-as-mjs"},{"depth":2,"text":"11. Testing","anchor":"migration--11-testing"},{"depth":2,"text":"12. Checklist","anchor":"migration--12-checklist"}],"text":" Migrating from webpack Vue CLI / webpack 5 Module Federation to Vite 7 This guide takes a typical Vue CLI or hand-rolled webpack 5 Vue 3 micro-frontend setup and moves it to the structure used in this repo. Each step maps a webpack concept to its Vite equivalent, with the real file from this repo as the target. 0. Strategy Migrate one app at a time, remotes first or host first , never big-bang. With Module Federation 2.0 a Vite host can consume webpack remotes and vice versa see step 9 , so the system keeps working while apps move over. Recommended order: 1. Upgrade the webpack app to Vue 3.5 and Node 22 first no build changes . 2. Migrate one leaf remote fewest dependents to Vite. 3. Migrate the remaining remotes. 4. Migrate the host last. 1. Dependencies package.json scripts: webpack / Vue CLI Vite --- --- vue-cli-service serve / webpack serve vite vue-cli-service build / webpack --mode production vite build vue-cli-service build --mode staging vite build --mode staging none vite preview Add \"type\": \"module\" to package.json so vite.config.mjs can use ESM. 2. index.html moves to the project root webpack Vite --- --- public/index.html + HtmlWebpackPlugin index.html at app root \u003c%= htmlWebpackPlugin.options.title % %VITE APP TITLE% \u003c%= BASE URL % favicon.ico /favicon.ico bundle injected automatically add \u003cscript type=\"module\" src=\"/src/main.mjs\" \u003c/script yourself Inline critical CSS can stay in \u003cstyle inside index.html see apps/host/index.html . 3. Config: vue.config.js / webpack.config.js → vite.config.mjs webpack Vite vite.config.mjs --- --- entry: './src/main.mjs' from index.html output.publicPath / publicPath base output.path / outputDir build.outDir default dist resolve.alias '@' resolve.alias '@' Vue CLI added it implicitly, Vite does not resolve.extensions incl. .vue Always write .vue in imports module.rules vue-loader @vitejs/plugin-vue module.rules babel-loader not needed esbuild for TS/JSX, modern targets module.rules sass/css/style-loader built in: just install sass css.loaderOptions.sass.additionalData css.preprocessorOptions.scss.additionalData file-loader / url-loader / asset modules built in; build.assetsInlineLimit DefinePlugin define devServer.port / proxy / headers server.port / server.proxy / server.headers devServer.historyApiFallback built in optimization.splitChunks build.rollupOptions.output.manualChunks ModuleFederationPlugin federation from @module-federation/vite CopyWebpackPlugin public public/ folder require.context import.meta.glob 4. Environment variables webpack / Vue CLI Vite --- --- VUE APP API URL VITE API BASE URL process.env.VUE APP API URL import.meta.env.VITE API BASE URL process.env.NODE ENV === 'production' import.meta.env.PROD process.env.BASE URL import.meta.env.BASE URL .env.development , .env.production same names, same idea Quick rename: If a library reads process.env.X at runtime, add define: { 'process.env.X': JSON.stringify value } . 5. Module syntax - require './x' → import x from './x' ; module.exports → export default . - require.context './modules', false, /\\.js$/ common for auto-registering Vuex modules : - Dynamic image paths: require \\ @/assets/${name}.png\\ → new URL \\ ../assets/${name}.png\\ , import.meta.url .href . 6. Sass - ~ prefix for node modules imports @import '~bootstrap/scss/x' → drop it: @use 'bootstrap/scss/x' . - node-sass → sass Dart Sass . Vite 7 only supports the modern API. - Move @import 'variables' to @use 'variables' as and inject via additionalData see apps/ /vite.config.mjs . - /deep/ and → :deep .child in scoped styles. 7. Auto-imports instead of global registration webpack apps often register components globally in main.mjs app.component 'BaseButton', ... or with require.context . Replace with: You can keep explicit imports, the plugins only fill in what's missing. 8. Vuex and axios in a micro-frontend These don't change between bundlers, but migrating is a good moment to fix two common webpack-era MFE problems: 1. Shared store by accident. If vuex was shared: { vuex: { singleton: true } } and remotes called useStore , they could get the host's store. Use one store per app with its own injection key and provide it from the remote root apps/shell-a/src/App.vue . 2. Global axios defaults. axios.defaults.baseURL = ... in one app leaks into others when axios is shared. Use axios.create per app and remove axios from shared apps/ /src/services/http.mjs . 9. Module Federation: webpack → Vite Remote Host Bootstrap file webpack MF needs an async boundary main.js → import './bootstrap' to avoid \"Shared module is not available for eager consumption\". Delete it in Vite: the plugin initialises sharing before your entry runs. Put the code back in main.mjs . Mixed bundlers during migration - Vite host → webpack remote: declare the remote with type: 'var' and its global name. - webpack host → Vite remote: add varFilename: 'varRemoteEntry.js' to the Vite remote and point the webpack host at that file shellA@https://.../varRemoteEntry.js . - Keep shared versions compatible on both sides. Shared UI kit webpack MFE setups often share a design-system package shared: { '@acme/ui': { singleton: true } } or publish it to npm. Here the host exposes it instead exposes: { './ui-dev': … } , and remotes consume host/ui-dev through a components resolver. That means no npm release, one version in production, and themes through CSS variables. See ui-dev UI DEV LIBRARY.md . Moving federation options out of the config remotes Remotes keep their ModuleFederationPlugin fields in shared.federation.json name , exposes , remotes , shared . Remote URLs become env key names entryEnv , so one JSON file works for every environment. See How vite.config.mjs is built VITE CONFIG.md . 10. JavaScript only, as .mjs - Rename vue.config.js / webpack.config.js to vite.config.mjs . .mjs is always ESM, so import / export work whatever \"type\" says. - Rename source files to .mjs main.mjs , router/index.mjs , … and update \u003cscript type=\"module\" src=\"/src/main.mjs\" . Extension-less imports keep working because Vite resolves .mjs first. - Drop TypeScript-only tooling: set dts: false for unplugin-auto-import/-components and federation, delete generated .d.ts , and add a jsconfig.json for editor path aliases. - Replace process.env in config code with loadEnv mode, root, '' see config/env.mjs . 11. Testing jest + vue-jest → Vitest npm i -D vitest @vue/test-utils jsdom . It reuses vite.config.mjs aliases, plugins . Most Jest APIs work with vi instead of jest . 12. Checklist - Node 20.19+ / 22.12+ - index.html at root with \u003cscript type=\"module\" src=\"/src/main.mjs\" - vite.config.mjs with @vitejs/plugin-vue and the @ alias - Config values come from .env. mode via loadEnv config/env.mjs , nothing hard-coded - Remotes: federation contract in shared.federation.json - Shared UI components consumed from host/ui-dev , not bundled per app - VUE APP → VITE , process.env → import.meta.env - No require / require.context left - All .vue imports include the extension - sass installed, ~ imports removed, /deep/ → :deep - webpack MF bootstrap.js async boundary removed - Remotes: absolute base for builds, server.origin for dev - axios and vuex not in shared ; per-app instances - vite build && vite preview works; host loads every remote - CI updated dist/ output, new scripts "},{"id":"host","title":"Host · :5000","toc":[{"depth":2,"text":"Run","anchor":"host--run"},{"depth":2,"text":"Features","anchor":"host--features"},{"depth":2,"text":"ui-dev library (shared with the remotes)","anchor":"host--ui-dev-library-shared-with-the-remotes"},{"depth":2,"text":"Vite config and env","anchor":"host--vite-config-and-env"},{"depth":2,"text":"Routes","anchor":"host--routes"},{"depth":2,"text":"Login modes","anchor":"host--login-modes"},{"depth":2,"text":"Adding a third remote","anchor":"host--adding-a-third-remote"},{"depth":2,"text":"Env files","anchor":"host--env-files"},{"depth":2,"text":"Migrating this app from webpack","anchor":"host--migrating-this-app-from-webpack"}],"text":" Host app @mfe/host · port 5000 The container application. It owns the URL, the login , the layout and the header, and loads the two remote micro-frontends at runtime with Module Federation. Run Open http://localhost:5000 → you're redirected to /login . Sign in with demo / demo123 . Features Feature Where --- --- Sample login mock or dummyjson src/views/LoginView.vue , src/store/modules/auth.mjs , src/services/authService.mjs Route guard requiresAuth , guestOnly src/router/index.mjs Own Vuex store + key hostStoreKey src/store/index.mjs , src/composables/useHostStore.mjs Own axios instance src/services/http.mjs Loading remotes safely src/utils/defineRemoteComponent.mjs , src/components/RemoteFallback.vue Listening to remote events src/App.vue → notifications module → header badges ui-dev shared UI library exposed as host/ui-dev src/ui-dev/ Env loader for vite.config.mjs config/env.mjs Inline critical CSS + boot splash index.html Sass tokens/mixins src/styles/ tokens.scss , global styles src/styles/main.scss ui-dev library shared with the remotes The host owns the component library in src/ui-dev and serves it to shell-a and shell-b: - The host uses the components directly auto-registered from src/ui-dev/components . - Remotes write \u003cUiButton and it resolves to host/ui-dev . - VITE CORS ORIGINS must list every remote origin that loads it. Components: UiButton , UiCard , UiInput , UiBadge , UiSpinner , UiAlert . Full reference: docs/UI DEV LIBRARY.md ../../docs/UI DEV LIBRARY.md . Vite config and env vite.config.mjs calls readEnv mode, root, 'VITE SHELL A ENTRY', 'VITE SHELL B ENTRY' from config/env.mjs , which loads .env + .env. mode and validates them. Port, host, server.origin , CORS, base , sourcemaps, console stripping and remote URLs all come from there. The host's federation options stay inline in vite.config.mjs ; only the remotes use shared.federation.json . See docs/VITE CONFIG.md ../../docs/VITE CONFIG.md . Routes Path View Guard --- --- --- /login LoginView guest only / HomeView dashboard auth /shell-a ShellAView → shellA/App auth /shell-b ShellBView → shellB/App auth NotFoundView Login modes VITE USE MOCK AUTH Credentials Behaviour --- --- --- true dev default demo / demo123 , guest / guest123 In-browser mock, 500 ms delay false emilys / emilyspass POST https://dummyjson.com/auth/login with the host axios instance The session is stored in sessionStorage 'mfe.auth' ; the remotes' own axios instances read the token from there. Logout clears it and broadcasts mfe:auth-changed . Adding a third remote 1. Add VITE SHELL C ENTRY to every .env. file of the host. 2. Add it to REMOTE ENV and remotes in vite.config.mjs , and add the remote's origin to VITE CORS ORIGINS . 3. Create src/views/ShellCView.vue with defineRemoteComponent = import 'shellC/App' , 'Shell C' . 4. Add a route and a header link. Env files .env , .env.development , .env.localprod , .env.staging , .env.production , .env.example . Details: docs/ENVIRONMENTS.md ../../docs/ENVIRONMENTS.md . Migrating this app from webpack If this host used to be a Vue CLI / webpack 5 app, these are the concrete changes: Before webpack After this app --- --- vue.config.js with ModuleFederationPlugin { remotes: { shellA: 'shellA@http://localhost:5001/remoteEntry.js' } } vite.config.mjs → federation { remotes: { shellA: { type: 'module', entry: env.VITE SHELL A ENTRY, … } } } src/main.js → import './bootstrap' async boundary Single src/main.mjs , no bootstrap file public/index.html with \u003c%= htmlWebpackPlugin.options.title % Root index.html with %VITE APP TITLE% and inline critical CSS VUE APP SHELL A URL / process.env VITE SHELL A ENTRY / loadEnv in config, import.meta.env in code css.loaderOptions.sass.additionalData: '@import \"@/styles/vars\";' css.preprocessorOptions.scss.additionalData: '@use \"@/styles/tokens\" as ;' app.component ... global registration unplugin-vue-components src/components auto-registered axios.defaults.baseURL = ... axios.create in src/services/http.mjs app.use store app.use store, hostStoreKey + useHostStore devServer: { port: 5000, historyApiFallback: true } server: { port, strictPort: true } history fallback built in Full guide: docs/WEBPACK TO VITE MIGRATION.md ../../docs/WEBPACK TO VITE MIGRATION.md . "},{"id":"shell-a","title":"Shell A · :5001","toc":[{"depth":2,"text":"Run","anchor":"shell-a--run"},{"depth":2,"text":"Public API (what the host can rely on)","anchor":"shell-a--public-api-what-the-host-can-rely-on"},{"depth":2,"text":"Internals","anchor":"shell-a--internals"},{"depth":3,"text":"shared.federation.json","anchor":"shell-a--sharedfederationjson"},{"depth":3,"text":"Using the host&#39;s ui-dev components","anchor":"shell-a--using-the-hosts-ui-dev-components"},{"depth":3,"text":"Why the store is provided in App.vue","anchor":"shell-a--why-the-store-is-provided-in-appvue"},{"depth":3,"text":"CSS rules for remotes","anchor":"shell-a--css-rules-for-remotes"},{"depth":2,"text":"Env files","anchor":"shell-a--env-files"},{"depth":2,"text":"Migrating this remote from webpack","anchor":"shell-a--migrating-this-remote-from-webpack"}],"text":" Shell A @mfe/shell-a · port 5001 Remote micro-frontend: product catalog + cart . It exposes ./App through Module Federation and can also run standalone. Run Inside the host it is mounted at /shell-a . Public API what the host can rely on Item Value --- --- Federation name shellA Remote entry \u003cVITE PUBLIC URL remoteEntry.js dev: http://localhost:5001/remoteEntry.js Exposed module ./App → src/expose/App.mjs → src/App.vue host: import 'shellA/App' Consumes host/ui-dev shared UI components from VITE HOST ENTRY Props user object, optional , standalone boolean Events published mfe:cart-updated → { count, items } Reads sessionStorage 'mfe.auth' token for its axios instance Keep this surface small and backwards compatible: the host and this remote deploy independently. Internals Concern Where --- --- Product search debounced + grid src/components/SearchBar.vue , ProductGrid.vue , ProductCard.vue Cart panel src/components/CartPanel.vue Own Vuex store + key shellAStoreKey modules: catalog , cart src/store/ , provided in src/App.vue Store accessor auto-imported src/composables/ Own axios instance → https://dummyjson.com src/services/http.mjs Offline fixtures network fallback / VITE USE MOCK API=true src/services/fixtures/ Federation contract shared.federation.json → config/federation.mjs Env loader for vite.config.mjs config/env.mjs UI components \u003cUi , no imports resolved to host/ui-dev by UiDevResolver in vite.config.mjs Event bus own copy src/utils/mfeBus.mjs Sass tokens src/styles/ tokens.scss Standalone bootstrap src/main.mjs never runs inside the host Inline critical CSS + standalone layout index.html never loaded by the host shared.federation.json This remote's federation options live in shared.federation.json , not in vite.config.mjs : entryEnv names the .env. mode key holding the URL, so this file is the same in every environment. See docs/VITE CONFIG.md ../../docs/VITE CONFIG.md . Using the host's ui-dev components Write \u003cUiButton , \u003cUiCard , \u003cUiInput , \u003cUiBadge , \u003cUiSpinner , \u003cUiAlert with no import. UiDevResolver turns them into import { UiButton } from 'host/ui-dev' . The theme comes from CSS variables on the root .shell-a { --ui-primary: … } in src/App.vue . src/expose/App.mjs and src/main.mjs both await import 'host/ui-dev' first. Standalone mode needs the host running on :5000. See docs/UI DEV LIBRARY.md ../../docs/UI DEV LIBRARY.md . Why the store is provide d in App.vue Inside the host, this component renders in the host's Vue app. A bare useStore would not find this remote's store. provide shellAStoreKey, store in the root and useStore shellAStoreKey in children keep the store private and identical in both modes. CSS rules for remotes bundleAllCSS: true ships every CSS file this remote imports together with ./App . So: scoped styles only, a root class .shell-a on the root element, and no global selectors body , app in .vue / .scss files. Standalone-only styles go inline in index.html . Env files File VITE PUBLIC URL --- --- .env.development http://localhost:5001/ .env.localprod http://localhost:5001/ .env.staging https://shell-a.staging.example.com/ .env.production https://shell-a.example.com/ VITE PUBLIC URL becomes server.origin in dev and base in builds. See docs/ENVIRONMENTS.md ../../docs/ENVIRONMENTS.md . Migrating this remote from webpack Before webpack 5 After this app --- --- new ModuleFederationPlugin { name: 'shellA', exposes: { './App': './src/App.vue' }, remotes: { host: 'host@…' } } in webpack.config.js shared.federation.json same fields, remote URL via entryEnv → federation createFederationOptions json, env.raw, pkg Shared UI kit as an npm package / shared: { '@acme/ui': … } host/ui-dev federated module + UiDevResolver output.publicPath: 'http://localhost:5001/' or 'auto' base: command === 'build' ? env.VITE PUBLIC URL : '/' + server.origin devServer.headers: { 'Access-Control-Allow-Origin': ' ' } server.cors: true , preview.cors: true main.js → import './bootstrap' Plain main.mjs shared: { vue, vuex, axios } shared: { vue } only; private Vuex + axios MiniCssExtractPlugin + style-loader Built-in CSS + bundleAllCSS VUE APP API URL VITE API BASE URL While the host is still on webpack, add varFilename: 'varRemoteEntry.js' here and point the webpack host at shellA@http://localhost:5001/varRemoteEntry.js . Full guide: docs/WEBPACK TO VITE MIGRATION.md ../../docs/WEBPACK TO VITE MIGRATION.md . "},{"id":"shell-b","title":"Shell B · :5002","toc":[{"depth":2,"text":"Run","anchor":"shell-b--run"},{"depth":2,"text":"Public API (what the host can rely on)","anchor":"shell-b--public-api-what-the-host-can-rely-on"},{"depth":2,"text":"Internals","anchor":"shell-b--internals"},{"depth":3,"text":"shared.federation.json","anchor":"shell-b--sharedfederationjson"},{"depth":3,"text":"Using the host&#39;s ui-dev components","anchor":"shell-b--using-the-hosts-ui-dev-components"},{"depth":3,"text":"Why the store is provided in App.vue","anchor":"shell-b--why-the-store-is-provided-in-appvue"},{"depth":3,"text":"CSS rules for remotes","anchor":"shell-b--css-rules-for-remotes"},{"depth":2,"text":"Env files","anchor":"shell-b--env-files"},{"depth":2,"text":"Migrating this remote from webpack","anchor":"shell-b--migrating-this-remote-from-webpack"}],"text":" Shell B @mfe/shell-b · port 5002 Remote micro-frontend: task board . It exposes ./App through Module Federation and can also run standalone. Run Inside the host it is mounted at /shell-b . Public API what the host can rely on Item Value --- --- Federation name shellB Remote entry \u003cVITE PUBLIC URL remoteEntry.js dev: http://localhost:5002/remoteEntry.js Exposed module ./App → src/expose/App.mjs → src/App.vue host: import 'shellB/App' Consumes host/ui-dev shared UI components from VITE HOST ENTRY Props user object, optional , standalone boolean Events published mfe:tasks-updated → { open, total } Reads sessionStorage 'mfe.auth' token for its axios instance Keep this surface small and backwards compatible: the host and this remote deploy independently. Internals Concern Where --- --- Add / toggle / delete tasks, progress bar src/components/AddTaskForm.vue , TaskList.vue , TaskItem.vue Filters all / open / done src/components/TaskFilters.vue Own Vuex store + key shellBStoreKey modules: tasks src/store/ , provided in src/App.vue Store accessor auto-imported src/composables/ Own axios instance → https://jsonplaceholder.typicode.com src/services/http.mjs Offline fixtures network fallback / VITE USE MOCK API=true src/services/fixtures/ Federation contract shared.federation.json → config/federation.mjs Env loader for vite.config.mjs config/env.mjs UI components \u003cUi , no imports resolved to host/ui-dev by UiDevResolver in vite.config.mjs Event bus own copy src/utils/mfeBus.mjs Sass tokens src/styles/ tokens.scss Standalone bootstrap src/main.mjs never runs inside the host Inline critical CSS + standalone layout index.html never loaded by the host shared.federation.json This remote's federation options live in shared.federation.json , not in vite.config.mjs : entryEnv names the .env. mode key holding the URL, so this file is the same in every environment. See docs/VITE CONFIG.md ../../docs/VITE CONFIG.md . Using the host's ui-dev components Write \u003cUiButton , \u003cUiCard , \u003cUiInput , \u003cUiBadge , \u003cUiSpinner , \u003cUiAlert with no import. UiDevResolver turns them into import { UiButton } from 'host/ui-dev' . The theme comes from CSS variables on the root .shell-b { --ui-primary: … } in src/App.vue . src/expose/App.mjs and src/main.mjs both await import 'host/ui-dev' first. Standalone mode needs the host running on :5000. See docs/UI DEV LIBRARY.md ../../docs/UI DEV LIBRARY.md . Why the store is provide d in App.vue Inside the host, this component renders in the host's Vue app. A bare useStore would not find this remote's store. provide shellBStoreKey, store in the root and useStore shellBStoreKey in children keep the store private and identical in both modes. CSS rules for remotes bundleAllCSS: true ships every CSS file this remote imports together with ./App . So: scoped styles only, a root class .shell-b on the root element, and no global selectors body , app in .vue / .scss files. Standalone-only styles go inline in index.html . Env files File VITE PUBLIC URL --- --- .env.development http://localhost:5002/ .env.localprod http://localhost:5002/ .env.staging https://shell-b.staging.example.com/ .env.production https://shell-b.example.com/ VITE PUBLIC URL becomes server.origin in dev and base in builds. See docs/ENVIRONMENTS.md ../../docs/ENVIRONMENTS.md . Migrating this remote from webpack Before webpack 5 After this app --- --- new ModuleFederationPlugin { name: 'shellB', exposes: { './App': './src/App.vue' }, remotes: { host: 'host@…' } } in webpack.config.js shared.federation.json same fields, remote URL via entryEnv → federation createFederationOptions json, env.raw, pkg Shared UI kit as an npm package / shared: { '@acme/ui': … } host/ui-dev federated module + UiDevResolver output.publicPath: 'http://localhost:5002/' or 'auto' base: command === 'build' ? env.VITE PUBLIC URL : '/' + server.origin devServer.headers: { 'Access-Control-Allow-Origin': ' ' } server.cors: true , preview.cors: true main.js → import './bootstrap' Plain main.mjs shared: { vue, vuex, axios } shared: { vue } only; private Vuex + axios MiniCssExtractPlugin + style-loader Built-in CSS + bundleAllCSS VUE APP API URL VITE API BASE URL While the host is still on webpack, add varFilename: 'varRemoteEntry.js' here and point the webpack host at shellB@http://localhost:5002/varRemoteEntry.js . Full guide: docs/WEBPACK TO VITE MIGRATION.md ../../docs/WEBPACK TO VITE MIGRATION.md . "}];
   const $ = (s, el = document) => el.querySelector(s);
   const $$ = (s, el = document) => [...el.querySelectorAll(s)];
   const pages = INDEX.map((p) => p.id);

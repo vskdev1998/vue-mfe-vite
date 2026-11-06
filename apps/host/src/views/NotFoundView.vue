@@ -1,8 +1,12 @@
+<script setup>
+const router = useRouter()
+</script>
+
 <template>
   <section class="page not-found">
     <h1>404</h1>
     <p>That page doesn't exist in the host.</p>
-    <RouterLink class="btn btn--primary" to="/">Back to dashboard</RouterLink>
+    <UiButton @click="router.push('/')">Back to dashboard</UiButton>
   </section>
 </template>
 

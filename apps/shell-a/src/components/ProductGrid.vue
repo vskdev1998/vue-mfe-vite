@@ -7,10 +7,12 @@ const retry = () => store.dispatch('catalog/fetch')
 
 <template>
   <div>
-    <p v-if="catalog.error" class="grid-msg grid-msg--error">
-      {{ catalog.error }} <button type="button" @click="retry">Retry</button>
+    <UiAlert v-if="catalog.error" tone="danger" title="Could not load products" class="grid-msg">
+      {{ catalog.error }} <UiButton size="sm" variant="ghost" @click="retry">Retry</UiButton>
+    </UiAlert>
+    <p v-else-if="catalog.loading && !catalog.items.length" class="grid-msg">
+      <UiSpinner size="18" /> Loading products…
     </p>
-    <p v-else-if="catalog.loading && !catalog.items.length" class="grid-msg">Loading products…</p>
     <p v-else-if="isEmpty" class="grid-msg">No products match “{{ catalog.query }}”.</p>
 
     <div class="grid" :class="{ 'grid--busy': catalog.loading }">
@@ -32,11 +34,10 @@ const retry = () => store.dispatch('catalog/fetch')
 }
 
 .grid-msg {
-  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
   color: $muted;
-
-  &--error {
-    color: #b91c1c;
-  }
 }
 </style>

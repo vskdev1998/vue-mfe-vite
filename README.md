@@ -4,13 +4,17 @@ A complete, working **Vue 3 + Vite 7 micro-frontend** monorepo built with **Modu
 
 | App | Role | Port | Exposes / consumes | Theme |
 | --- | --- | --- | --- | --- |
-| [`apps/host`](apps/host/README.md) | Container: routing, **login**, layout, header | 5000 | consumes `shellA/App`, `shellB/App` | green |
-| [`apps/shell-a`](apps/shell-a/README.md) | Remote: product catalog + cart | 5001 | exposes `./App` | indigo |
-| [`apps/shell-b`](apps/shell-b/README.md) | Remote: task board | 5002 | exposes `./App` | teal |
+| [`apps/host`](apps/host/README.md) | Container: routing, **login**, layout, header, **ui-dev library** | 5000 | consumes `shellA/App`, `shellB/App`; exposes `./ui-dev` | green |
+| [`apps/shell-a`](apps/shell-a/README.md) | Remote: product catalog + cart | 5001 | exposes `./App`; consumes `host/ui-dev` | indigo |
+| [`apps/shell-b`](apps/shell-b/README.md) | Remote: task board | 5002 | exposes `./App`; consumes `host/ui-dev` | teal |
 
 ### What's inside
 
 - **Vite 7** (`vite@^7.3`) with `@vitejs/plugin-vue@6`
+- **Plain JavaScript as `.mjs`** everywhere (configs, scripts, source). No TypeScript, no generated `.d.ts`
+- **`vite.config.mjs` driven by `.env.[mode]`** through each app's `config/env.mjs` (ports, URLs, CORS, sourcemaps, remote entries)
+- **`shared.federation.json` in each remote**: the federation contract (exposes, remotes, shared), turned into plugin options by `config/federation.mjs`
+- **`ui-dev` shared UI library** owned by the host and federated to the remotes as `host/ui-dev` (`<UiButton>`, `<UiCard>`, `<UiInput>`, …, auto-resolved, no imports)
 - **Module Federation** via [`@module-federation/vite`](https://module-federation.io/integrations/build-tool/vite) (works in dev *and* build)
 - **Sass** (modern compiler API) with per-app design tokens injected through `additionalData`
 - **Critical CSS inline in each `index.html`** (background + boot splash before JS loads)
@@ -50,7 +54,7 @@ npm run start        # = build:localprod (all apps) + vite preview on 5000/5001/
 | `npm run build` | Production build (`.env.production`), remotes first, then host |
 | `npm run build:staging` | Staging build (`.env.staging`) |
 | `npm run build:localprod` | Production bundles pointing at localhost (`.env.localprod`) |
-| `npm run preview` | Serve every `dist/` with `vite preview` |
+| `npm run preview` | Serve every `dist/` with `vite preview --mode localprod` |
 | `npm run start` | `build:localprod` + `preview` |
 | `npm run docs` | Build the docs site and serve it on :5050 |
 | `npm run docs:build` | Regenerate `docs/site/index.html` from the Markdown |
@@ -60,30 +64,39 @@ npm run start        # = build:localprod (all apps) + vite preview on 5000/5001/
 
 ```
 vue-mfe-vite/
-├─ package.json            # npm workspaces + orchestration scripts
-├─ scripts/                # build-docs.mjs + docs-template.html
+├─ package.json              # npm workspaces + orchestration scripts
+├─ scripts/                  # build-docs.mjs + docs-template.html
 ├─ docs/
-│  ├─ site/index.html     # generated developer docs site (open in a browser)
-│  ├─ ARCHITECTURE.md      # how host/remotes, stores, axios, events fit together
-│  ├─ ENVIRONMENTS.md      # every env file and variable, per app
-│  ├─ VITE7_GUIDE.md       # Vite 7 explained using this repo
+│  ├─ site/index.html        # generated developer docs site (open in a browser)
+│  ├─ ARCHITECTURE.md        # how host/remotes, stores, axios, events fit together
+│  ├─ VITE_CONFIG.md         # vite.config.mjs ← .env.[mode] + shared.federation.json
+│  ├─ UI_DEV_LIBRARY.md      # the shared ui-dev component library
+│  ├─ ENVIRONMENTS.md        # every env file and variable, per app
+│  ├─ VITE7_GUIDE.md         # Vite 7 explained using this repo
 │  └─ WEBPACK_TO_VITE_MIGRATION.md
 └─ apps/
-   ├─ host/                # :5000
-   ├─ shell-a/             # :5001
-   └─ shell-b/             # :5002
+   ├─ host/                  # :5000
+   │  ├─ vite.config.mjs     # federation options inline (exposes ./ui-dev)
+   │  └─ src/ui-dev/         # shared UI library (index.mjs, components/, styles/)
+   ├─ shell-a/               # :5001
+   └─ shell-b/               # :5002
       ├─ .env, .env.development, .env.localprod, .env.staging, .env.production, .env.example
-      ├─ index.html        # inline critical CSS
-      ├─ vite.config.js    # vue + auto-import + components + federation + sass
+      ├─ shared.federation.json   # (remotes only) name, exposes, remotes, shared
+      ├─ config/env.mjs           # loads + validates .env.[mode] for vite.config.mjs
+      ├─ config/federation.mjs    # (remotes) shared.federation.json → plugin options
+      ├─ jsconfig.json            # editor alias support (no TypeScript)
+      ├─ index.html               # inline critical CSS
+      ├─ vite.config.mjs          # vue + auto-import + components + federation + sass
       └─ src/
-         ├─ App.vue        # (remotes) exposed root component, provides its own store
-         ├─ main.js        # standalone bootstrap
-         ├─ components/    # auto-registered
-         ├─ composables/   # auto-imported (useShellAStore, useHostStore, …)
-         ├─ services/      # private axios instance + API services (+ fixtures)
-         ├─ store/         # private Vuex store + modules
-         ├─ styles/        # _tokens.scss (vars/mixins) + global styles
-         └─ utils/         # mfeBus.js (own copy in every app)
+         ├─ App.vue               # (remotes) root component, provides its own store
+         ├─ expose/App.mjs        # (remotes) federated entry: awaits host/ui-dev, re-exports App
+         ├─ main.mjs              # standalone bootstrap
+         ├─ components/           # auto-registered
+         ├─ composables/          # auto-imported (useShellAStore, useHostStore, …)
+         ├─ services/             # private axios instance + API services (+ fixtures)
+         ├─ store/                # private Vuex store + modules
+         ├─ styles/               # _tokens.scss (vars/mixins) + global styles
+         └─ utils/                # mfeBus.mjs (own copy in every app)
 ```
 
 ## Documentation
@@ -91,6 +104,8 @@ vue-mfe-vite/
 **Developer docs site:** open [`docs/site/index.html`](docs/site/index.html) in a browser (works from disk), or run `npm run docs` to serve it at http://localhost:5050. It is generated from the Markdown files below by `scripts/build-docs.mjs`; after editing any `.md`, run `npm run docs:build`.
 
 - [Architecture](docs/ARCHITECTURE.md)
+- [How vite.config.mjs is built (env + shared.federation.json)](docs/VITE_CONFIG.md)
+- [ui-dev shared UI library](docs/UI_DEV_LIBRARY.md)
 - [Environments & env files](docs/ENVIRONMENTS.md)
 - [Vite 7 guide](docs/VITE7_GUIDE.md)
 - [Migrating from webpack (Vue CLI / webpack 5 Module Federation) to Vite](docs/WEBPACK_TO_VITE_MIGRATION.md)
@@ -101,6 +116,8 @@ vue-mfe-vite/
 | Symptom | Fix |
 | --- | --- |
 | "Shell A is unavailable" card in the host | The remote isn't running. `npm run dev` at the root starts all apps. Check `VITE_SHELL_A_ENTRY`. |
+| Standalone remote shows nothing / `RUNTIME-008` for `:5000/remoteEntry.js` | Remotes load `host/ui-dev` from the host. Start the host too (`npm run dev` starts all three). |
+| `missing env for mode "…"` on start | Add the listed keys to `.env.[mode]` of that app (see `.env.example`). |
 | Port already in use | Ports are `strictPort`. Free 5000–5002 or change `VITE_PORT` (and the host's `VITE_SHELL_*_ENTRY`). |
 | Remote chunks 404 in production | The remote's `VITE_PUBLIC_URL` (build `base`) must be the URL it is deployed at. |
 | Products / tasks show fixture data | The public APIs (dummyjson / jsonplaceholder) were unreachable; the services fell back to `src/services/fixtures`. |

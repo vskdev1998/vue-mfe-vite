@@ -19,7 +19,9 @@ const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 const PAGES = [
   { id: 'overview', group: 'Getting started', title: 'Overview', file: 'README.md' },
   { id: 'architecture', group: 'Guides', title: 'Architecture', file: 'docs/ARCHITECTURE.md' },
+  { id: 'vite-config', group: 'Guides', title: 'vite.config.mjs + env', file: 'docs/VITE_CONFIG.md' },
   { id: 'environments', group: 'Guides', title: 'Environments', file: 'docs/ENVIRONMENTS.md' },
+  { id: 'ui-dev', group: 'Guides', title: 'ui-dev UI library', file: 'docs/UI_DEV_LIBRARY.md' },
   { id: 'vite7', group: 'Guides', title: 'Vite 7 guide', file: 'docs/VITE7_GUIDE.md' },
   { id: 'migration', group: 'Guides', title: 'webpack → Vite migration', file: 'docs/WEBPACK_TO_VITE_MIGRATION.md' },
   { id: 'host', group: 'Apps', title: 'Host · :5000', file: 'apps/host/README.md' },

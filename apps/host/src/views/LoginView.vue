@@ -24,26 +24,26 @@ async function onSubmit() {
 
 <template>
   <section class="login">
-    <form class="login__card" novalidate @submit.prevent="onSubmit">
+    <!-- UiCard / UiInput / UiAlert / UiButton come from the host's ui-dev library -->
+    <UiCard as="form" class="login__card" :padding="28" novalidate @submit.prevent="onSubmit">
       <img src="/favicon.svg" alt="" width="48" height="48" class="login__logo" />
       <h1>Sign in</h1>
       <p class="login__subtitle">Host app · Vue 3 + Vite 7 micro-frontends</p>
 
-      <label class="field">
-        <span>Username</span>
-        <input v-model.trim="form.username" autocomplete="username" required />
-      </label>
+      <UiInput v-model.trim="form.username" label="Username" autocomplete="username" required />
+      <UiInput
+        v-model="form.password"
+        label="Password"
+        type="password"
+        autocomplete="current-password"
+        required
+      />
 
-      <label class="field">
-        <span>Password</span>
-        <input v-model="form.password" type="password" autocomplete="current-password" required />
-      </label>
+      <UiAlert v-if="error" tone="danger">{{ error }}</UiAlert>
 
-      <p v-if="error" class="login__error" role="alert">{{ error }}</p>
-
-      <button class="btn btn--primary login__submit" type="submit" :disabled="loading">
+      <UiButton type="submit" size="lg" block :loading="loading">
         {{ loading ? 'Signing in…' : 'Sign in' }}
-      </button>
+      </UiButton>
 
       <p class="login__hint">
         <template v-if="useMock">
@@ -51,7 +51,7 @@ async function onSubmit() {
         </template>
         <template v-else>Live API (dummyjson): <code>emilys / emilyspass</code></template>
       </p>
-    </form>
+    </UiCard>
   </section>
 </template>
 
@@ -64,13 +64,12 @@ async function onSubmit() {
   background: linear-gradient(135deg, tint($brand, 85%), tint($brand-dark, 85%));
 
   &__card {
-    @include card;
     width: 100%;
     max-width: 380px;
-    padding: 32px 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+
+    :deep(.ui-card__body) {
+      gap: 14px;
+    }
   }
 
   &__logo {
@@ -89,46 +88,11 @@ async function onSubmit() {
     font-size: 14px;
   }
 
-  &__error {
-    margin: 0;
-    padding: 8px 12px;
-    border-radius: 6px;
-    background: tint($danger, 90%);
-    color: $danger;
-    font-size: 14px;
-  }
-
-  &__submit {
-    justify-content: center;
-    padding: 10px;
-  }
-
   &__hint {
     margin: 0;
     font-size: 13px;
     color: $muted;
     text-align: center;
-  }
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 14px;
-  font-weight: 600;
-
-  input {
-    padding: 10px 12px;
-    border: 1px solid $border;
-    border-radius: 8px;
-    font: inherit;
-    font-weight: 400;
-
-    &:focus {
-      outline: 2px solid tint($brand, 40%);
-      border-color: $brand;
-    }
   }
 }
 </style>

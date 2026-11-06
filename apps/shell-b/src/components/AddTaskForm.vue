@@ -16,11 +16,10 @@ async function submit() {
 </script>
 
 <template>
+  <!-- UiInput / UiButton: host/ui-dev -->
   <form class="add" @submit.prevent="submit">
-    <input v-model="title" class="add__input" placeholder="What needs doing?" aria-label="New task" />
-    <button class="add__btn" type="submit" :disabled="saving || !title.trim()">
-      {{ saving ? 'Adding…' : 'Add task' }}
-    </button>
+    <UiInput v-model="title" class="add__input" placeholder="What needs doing?" aria-label="New task" />
+    <UiButton type="submit" :loading="saving" :disabled="!title.trim()">Add task</UiButton>
   </form>
 </template>
 
@@ -28,36 +27,12 @@ async function submit() {
 .add {
   display: flex;
   gap: 8px;
+  align-items: flex-start;
   margin-bottom: 12px;
 
   &__input {
     flex: 1;
     min-width: 0;
-    padding: 10px 14px;
-    border: 1px solid $border;
-    border-radius: $radius;
-    font: inherit;
-
-    &:focus {
-      outline: 2px solid soft($accent, 50%);
-      border-color: $accent;
-    }
-  }
-
-  &__btn {
-    padding: 10px 16px;
-    border: 0;
-    border-radius: $radius;
-    background: $accent;
-    color: #fff;
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
   }
 }
 </style>

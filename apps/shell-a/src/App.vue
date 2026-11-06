@@ -30,9 +30,8 @@ onMounted(() => {
           Shopping as <strong>{{ props.user.firstName }}</strong>
         </p>
       </div>
-      <button type="button" class="shell-a__cart-btn" @click="cartOpen = !cartOpen">
-        🛒 Cart ({{ cartCount }})
-      </button>
+      <!-- <UiButton> is auto-imported from the host's ui-dev library (host/ui-dev) -->
+      <UiButton @click="cartOpen = !cartOpen">🛒 Cart ({{ cartCount }})</UiButton>
     </header>
 
     <SearchBar />
@@ -44,6 +43,10 @@ onMounted(() => {
 <style lang="scss" scoped>
 // Everything is scoped under .shell-a so styles never bleed into the host.
 .shell-a {
+  // Theme the shared ui-dev components for this micro-frontend
+  --ui-primary: #{$accent};
+  --ui-border: #{$border};
+  --ui-text: #{$text};
   color: $text;
 
   &__header {
@@ -71,21 +74,6 @@ onMounted(() => {
   &__hello {
     margin: 0;
     color: $muted;
-  }
-
-  &__cart-btn {
-    padding: 10px 16px;
-    border: 0;
-    border-radius: 999px;
-    background: $accent;
-    color: #fff;
-    font: inherit;
-    font-weight: 700;
-    cursor: pointer;
-
-    &:hover {
-      background: $accent-dark;
-    }
   }
 }
 </style>

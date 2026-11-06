@@ -40,7 +40,7 @@ npm i -D vite@^7 @vitejs/plugin-vue@^6 sass @module-federation/vite \
 | `vue-cli-service build --mode staging` | `vite build --mode staging` |
 | (none) | `vite preview` |
 
-Add `"type": "module"` to `package.json` so `vite.config.js` can use ESM.
+Add `"type": "module"` to `package.json` so `vite.config.mjs` can use ESM.
 
 ## 2. `index.html` moves to the project root
 
@@ -49,15 +49,15 @@ Add `"type": "module"` to `package.json` so `vite.config.js` can use ESM.
 | `public/index.html` + `HtmlWebpackPlugin` | `index.html` at app root |
 | `<%= htmlWebpackPlugin.options.title %>` | `%VITE_APP_TITLE%` |
 | `<%= BASE_URL %>favicon.ico` | `/favicon.ico` |
-| bundle injected automatically | add `<script type="module" src="/src/main.js"></script>` yourself |
+| bundle injected automatically | add `<script type="module" src="/src/main.mjs"></script>` yourself |
 
 Inline critical CSS can stay in `<style>` inside `index.html` (see `apps/host/index.html`).
 
-## 3. Config: `vue.config.js` / `webpack.config.js` → `vite.config.js`
+## 3. Config: `vue.config.js` / `webpack.config.js` → `vite.config.mjs`
 
-| webpack | Vite (`vite.config.js`) |
+| webpack | Vite (`vite.config.mjs`) |
 | --- | --- |
-| `entry: './src/main.js'` | from `index.html` |
+| `entry: './src/main.mjs'` | from `index.html` |
 | `output.publicPath` / `publicPath` | `base` |
 | `output.path` / `outputDir` | `build.outDir` (default `dist`) |
 | `resolve.alias['@']` | `resolve.alias['@']` (Vue CLI added it implicitly, Vite does not) |
@@ -105,9 +105,9 @@ const ctx = require.context('./modules', false, /\.js$/)
 const modules = Object.fromEntries(ctx.keys().map((k) => [k.replace(/(\.\/|\.js)/g, ''), ctx(k).default]))
 
 // Vite
-const files = import.meta.glob('./modules/*.js', { eager: true })
+const files = import.meta.glob('./modules/*.mjs', { eager: true })
 const modules = Object.fromEntries(
-  Object.entries(files).map(([path, m]) => [path.match(/\/(\w+)\.js$/)[1], m.default]),
+  Object.entries(files).map(([path, m]) => [path.match(/\/(\w+)\.mjs$/)[1], m.default]),
 )
 ```
 
@@ -117,12 +117,12 @@ const modules = Object.fromEntries(
 
 - `~` prefix for node_modules imports (`@import '~bootstrap/scss/x'`) → drop it: `@use 'bootstrap/scss/x'`.
 - `node-sass` → `sass` (Dart Sass). Vite 7 only supports the modern API.
-- Move `@import 'variables'` to `@use 'variables' as *` and inject via `additionalData` (see `apps/*/vite.config.js`).
+- Move `@import 'variables'` to `@use 'variables' as *` and inject via `additionalData` (see `apps/*/vite.config.mjs`).
 - `/deep/` and `>>>` → `:deep(.child)` in scoped styles.
 
 ## 7. Auto-imports instead of global registration
 
-webpack apps often register components globally in `main.js` (`app.component('BaseButton', ...)`)
+webpack apps often register components globally in `main.mjs` (`app.component('BaseButton', ...)`)
 or with `require.context`. Replace with:
 
 ```js
@@ -142,7 +142,7 @@ webpack-era MFE problems:
    its own injection key and `provide` it from the remote root (`apps/shell-a/src/App.vue`).
 2. **Global axios defaults.** `axios.defaults.baseURL = ...` in one app leaks into others when
    axios is shared. Use `axios.create()` per app and remove axios from `shared`
-   (`apps/*/src/services/http.js`).
+   (`apps/*/src/services/http.mjs`).
 
 ## 9. Module Federation: webpack → Vite
 
@@ -160,7 +160,7 @@ output: { publicPath: 'http://localhost:5001/' }
 ```
 
 ```js
-// vite.config.js
+// vite.config.mjs
 federation({
   name: 'shellA',
   filename: 'remoteEntry.js',
@@ -189,7 +189,7 @@ remotes: {
 
 webpack MF needs an async boundary (`main.js` → `import('./bootstrap')`) to avoid
 "Shared module is not available for eager consumption". **Delete it** in Vite: the plugin
-initialises sharing before your entry runs. Put the code back in `main.js`.
+initialises sharing before your entry runs. Put the code back in `main.mjs`.
 
 ### Mixed bundlers during migration
 
@@ -198,16 +198,43 @@ initialises sharing before your entry runs. Put the code back in `main.js`.
   and point the webpack host at that file (`shellA@https://.../varRemoteEntry.js`).
 - Keep `shared` versions compatible on both sides.
 
-## 10. Testing
+### Shared UI kit
+
+webpack MFE setups often share a design-system package (`shared: { '@acme/ui': { singleton: true } }`)
+or publish it to npm. Here the host **exposes** it instead (`exposes: { './ui-dev': … }`), and
+remotes consume `host/ui-dev` through a components resolver. That means no npm release, one
+version in production, and themes through CSS variables. See [ui-dev](UI_DEV_LIBRARY.md).
+
+### Moving federation options out of the config (remotes)
+
+Remotes keep their `ModuleFederationPlugin` fields in `shared.federation.json` (`name`,
+`exposes`, `remotes`, `shared`). Remote URLs become env key names (`entryEnv`), so one JSON
+file works for every environment. See [How vite.config.mjs is built](VITE_CONFIG.md).
+
+## 10. JavaScript only, as `.mjs`
+
+- Rename `vue.config.js` / `webpack.config.js` to `vite.config.mjs`. `.mjs` is always ESM, so
+  `import`/`export` work whatever `"type"` says.
+- Rename source files to `.mjs` (`main.mjs`, `router/index.mjs`, …) and update
+  `<script type="module" src="/src/main.mjs">`. Extension-less imports keep working because
+  Vite resolves `.mjs` first.
+- Drop TypeScript-only tooling: set `dts: false` for unplugin-auto-import/-components and
+  federation, delete generated `.d.ts`, and add a `jsconfig.json` for editor path aliases.
+- Replace `process.env` in config code with `loadEnv(mode, root, '')` (see `config/env.mjs`).
+
+## 11. Testing
 
 `jest` + `vue-jest` → **Vitest** (`npm i -D vitest @vue/test-utils jsdom`). It reuses
-`vite.config.js` (aliases, plugins). Most Jest APIs work with `vi` instead of `jest`.
+`vite.config.mjs` (aliases, plugins). Most Jest APIs work with `vi` instead of `jest`.
 
-## 11. Checklist
+## 12. Checklist
 
 - [ ] Node 20.19+ / 22.12+
-- [ ] `index.html` at root with `<script type="module" src="/src/main.js">`
-- [ ] `vite.config.js` with `@vitejs/plugin-vue` and the `@` alias
+- [ ] `index.html` at root with `<script type="module" src="/src/main.mjs">`
+- [ ] `vite.config.mjs` with `@vitejs/plugin-vue` and the `@` alias
+- [ ] Config values come from `.env.[mode]` via `loadEnv` (`config/env.mjs`), nothing hard-coded
+- [ ] Remotes: federation contract in `shared.federation.json`
+- [ ] Shared UI components consumed from `host/ui-dev`, not bundled per app
 - [ ] `VUE_APP_*` → `VITE_*`, `process.env` → `import.meta.env`
 - [ ] No `require()` / `require.context()` left
 - [ ] All `.vue` imports include the extension

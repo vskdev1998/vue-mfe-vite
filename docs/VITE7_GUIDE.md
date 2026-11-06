@@ -34,34 +34,40 @@ uses top-level `await`.
 apps/host/
 ├─ index.html        ← the real entry (not in /public). Vite parses it and follows <script type="module">
 ├─ public/           ← copied as-is, served at /  (favicon.svg)
-├─ vite.config.js
+├─ vite.config.mjs
 ├─ .env*             ← env files
-└─ src/main.js
+└─ src/main.mjs
 ```
 
 `index.html` supports env replacement: `<title>%VITE_APP_TITLE%</title>`.
 
-## 4. The config, line by line (`apps/host/vite.config.js`)
+## 4. The config, line by line (`apps/host/vite.config.mjs`)
 
 ```js
 export default defineConfig(({ command, mode }) => {   // function form gives command/mode
-  const env = loadEnv(mode, process.cwd(), '')          // '' = load ALL vars, not only VITE_*
+  const env = readEnv(mode, root, ['VITE_SHELL_A_ENTRY', 'VITE_SHELL_B_ENTRY'])
+  //          └─ config/env.mjs: loadEnv(mode, root, '') + validation + typed values
   return {
-    plugins: [vue(), AutoImport({...}), Components({...}), federation({...})],
+    base: command === 'build' ? env.publicUrl : '/',
+    plugins: [envBanner(env, remoteUrls), vue(), AutoImport({...}), Components({...}), federation({...})],
     resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-    css: { preprocessorOptions: { scss: { additionalData: `@use "@/styles/tokens" as *;\n` } } },
-    server:  { port, strictPort: true },
-    preview: { port, strictPort: true },
-    build:   { target: 'esnext' },
+    define:  { __APP_NAME__: JSON.stringify(env.appName), __APP_ENV__: JSON.stringify(env.appEnv) },
+    css:     { preprocessorOptions: { scss: { additionalData: `@use "@/styles/tokens" as *;\n` } } },
+    server:  { host: env.devHost, port: env.port, strictPort: true, open: env.open, origin: env.origin, cors: { origin: env.corsOrigins } },
+    preview: { host: env.devHost, port: env.port, strictPort: true, cors: { origin: env.corsOrigins } },
+    esbuild: { pure: env.dropConsole ? ['console.log', 'console.debug'] : [] },
+    build:   { target: 'esnext', sourcemap: env.sourcemap },
   }
 })
 ```
 
-- `command` is `'serve'` or `'build'`; remotes use it to set `base` only for builds.
+- `command` is `'serve'` or `'build'`; every app uses it to set an absolute `base` only for builds.
 - `mode` is `development` for `vite`, `production` for `vite build`, or whatever `--mode` says.
+- The config file is `vite.config.mjs`: always ESM, no TypeScript. Details in [VITE_CONFIG.md](VITE_CONFIG.md).
 
 ## 5. Environment variables
 
+- In `vite.config.mjs` use `loadEnv(mode, root, '')` (this repo wraps it in `config/env.mjs`). `import.meta.env` is **not** available inside the config.
 - `import.meta.env.VITE_*` in client code; `MODE`, `DEV`, `PROD`, `BASE_URL`, `SSR` are built in.
 - Files: `.env`, `.env.local`, `.env.[mode]`, `.env.[mode].local`. See [ENVIRONMENTS.md](ENVIRONMENTS.md).
 - `process.env` does **not** exist in browser code. Replace `process.env.VUE_APP_X` with `import.meta.env.VITE_X`.
@@ -88,14 +94,20 @@ export default defineConfig(({ command, mode }) => {   // function form gives co
 AutoImport({
   imports: ['vue', 'vue-router', 'vuex'],   // ref, computed, useRoute, useStore…
   dirs: ['src/composables', 'src/utils'],   // your own exports become globals too
-  dts: 'src/auto-imports.d.ts',             // editor IntelliSense (generated)
+  dts: false,                               // plain JS: no .d.ts (set a path to generate one)
   vueTemplate: true,                        // also usable inside <template>
 })
-Components({ dirs: ['src/components'], dts: 'src/components.d.ts' })
+Components({ dirs: ['src/components'], dts: false })
 ```
 
-`auto-imports.d.ts` and `components.d.ts` are generated on the first `dev`/`build`.
-Keep entry files (`main.js`) explicit: it makes bootstrap code readable.
+Keep entry files (`main.mjs`) explicit: it makes bootstrap code readable.
+
+This repo runs both plugins with `dts: false` (no TypeScript). Components can also come from a
+**resolver**: the remotes map every `<UiXxx>` tag to the federated module `host/ui-dev`:
+
+```js
+Components({ resolvers: [(name) => (/^Ui[A-Z]/.test(name) ? { name, from: 'host/ui-dev' } : undefined)] })
+```
 
 ## 9. Code splitting
 

@@ -24,19 +24,17 @@ function logout() {
       <RouterLink to="/">Dashboard</RouterLink>
       <RouterLink to="/shell-a">
         Shell A
-        <span v-if="cartCount" class="badge" :aria-label="`${cartCount} items in cart`">{{
-          cartCount
-        }}</span>
+        <UiBadge v-if="cartCount" :aria-label="`${cartCount} items in cart`">{{ cartCount }}</UiBadge>
       </RouterLink>
       <RouterLink to="/shell-b">
         Shell B
-        <span v-if="openTasks" class="badge badge--alt">{{ openTasks }}</span>
+        <UiBadge v-if="openTasks" tone="warning">{{ openTasks }}</UiBadge>
       </RouterLink>
     </nav>
 
     <div class="app-header__user">
       <span class="app-header__name">👤 {{ displayName }}</span>
-      <button class="btn btn--ghost" type="button" @click="logout">Logout</button>
+      <UiButton variant="ghost" size="sm" class="app-header__logout" @click="logout">Logout</UiButton>
     </div>
   </header>
 </template>
@@ -103,14 +101,11 @@ function logout() {
     display: flex;
     align-items: center;
     gap: 12px;
+  }
 
-    .btn--ghost {
-      color: #fff;
-      border-color: rgba(255, 255, 255, 0.3);
-      &:hover {
-        background: rgba(255, 255, 255, 0.1);
-      }
-    }
+  &__logout {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
   }
 
   &__name {
@@ -118,20 +113,7 @@ function logout() {
   }
 }
 
-.badge {
-  display: inline-block;
-  min-width: 20px;
-  padding: 0 6px;
+:deep(.ui-badge) {
   margin-left: 4px;
-  border-radius: 999px;
-  background: $brand;
-  color: #fff;
-  font-size: 12px;
-  line-height: 20px;
-  text-align: center;
-
-  &--alt {
-    background: #f59e0b;
-  }
 }
 </style>

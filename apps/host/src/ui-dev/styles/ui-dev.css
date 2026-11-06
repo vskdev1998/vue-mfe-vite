@@ -1,0 +1,20 @@
+/*
+ * ui-dev design tokens (CSS custom properties).
+ * Consumers theme the library by overriding these on any ancestor, e.g.
+ *   .shell-a { --ui-primary: #6366f1; }
+ * Plain CSS (not Sass) so the values can change at runtime and across apps.
+ */
+:root {
+  --ui-primary: #42b883;
+  --ui-primary-contrast: #ffffff;
+  --ui-danger: #e5484d;
+  --ui-warning: #f59e0b;
+  --ui-info: #3b82f6;
+  --ui-success: #16a34a;
+  --ui-text: #1f2937;
+  --ui-muted: #6b7280;
+  --ui-surface: #ffffff;
+  --ui-border: #e5e7eb;
+  --ui-radius: 10px;
+  --ui-font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}

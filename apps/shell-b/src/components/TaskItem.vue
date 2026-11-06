@@ -9,9 +9,9 @@ const store = useShellBStore()
       <input type="checkbox" :checked="task.done" @change="store.dispatch('tasks/toggle', task.id)" />
       <span>{{ task.title }}</span>
     </label>
-    <button type="button" class="task__del" aria-label="Delete task" @click="store.dispatch('tasks/remove', task.id)">
+    <UiButton variant="ghost" size="sm" aria-label="Delete task" @click="store.dispatch('tasks/remove', task.id)">
       🗑
-    </button>
+    </UiButton>
   </li>
 </template>
 
@@ -40,17 +40,6 @@ const store = useShellBStore()
   &--done span {
     color: $muted;
     text-decoration: line-through;
-  }
-
-  &__del {
-    border: 0;
-    background: none;
-    cursor: pointer;
-    opacity: 0.5;
-
-    &:hover {
-      opacity: 1;
-    }
   }
 }
 </style>

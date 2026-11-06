@@ -9,7 +9,8 @@
 │   /shell-a  ──► defineRemoteComponent(() => import('shellA/App'))            │
 │                 │  loads http://localhost:5001/remoteEntry.js at runtime     │
 │                 ▼                                                            │
-│   ┌──────────────────────────────┐   ┌──────────────────────────────┐        │
+│   EXPOSES host/ui-dev ◄──── <Ui*> components used by both remotes ───┐      │
+│   ┌──────────────────────────────┐   ┌──────────────────────────────┐ │      │
 │   │ SHELL-A  <App :user/>        │   │ SHELL-B  <App :user/>        │        │
 │   │ provide(shellAStoreKey)      │   │ provide(shellBStoreKey)      │        │
 │   │ Vuex: catalog, cart          │   │ Vuex: tasks                  │        │
@@ -19,7 +20,7 @@
 │                  └──────────────► window ◄──────────┘                        │
 │                        host App.vue listens → notifications module          │
 └──────────────────────────────────────────────────────────────────────────────┘
-        shared via federation: vue (singleton) ONLY
+        shared via federation: vue (singleton) + host/ui-dev (exposed module)
 ```
 
 ## 1. Module Federation
@@ -29,41 +30,63 @@ Module Federation org and recommended by the Vite team). Unlike the older
 `@originjs/vite-plugin-federation`, remotes work in **dev mode**, so you get HMR in
 every app while running the host.
 
-**Remotes** (`apps/shell-*/vite.config.js`):
+Federation runs **both ways**:
 
-```js
-federation({
-  name: 'shellA',                 // container name, must be unique
-  filename: 'remoteEntry.js',     // served at <VITE_PUBLIC_URL>/remoteEntry.js
-  exposes: { './App': './src/App.vue' },
-  shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } },
-  bundleAllCSS: true,             // inject this remote's CSS when the host loads ./App
-  dts: false,                     // plain JS project
-})
+| App | Exposes | Consumes |
+| --- | --- | --- |
+| host | `./ui-dev` (shared UI library) | `shellA/App`, `shellB/App` |
+| shell-a | `./App` | `host/ui-dev` |
+| shell-b | `./App` | `host/ui-dev` |
+
+**Remotes** read their options from `shared.federation.json` (see [How vite.config.mjs is built](VITE_CONFIG.md)):
+
+```json
+{
+  "name": "shellA",
+  "exposes": { "./App": "./src/expose/App.mjs" },
+  "remotes": { "host": { "type": "module", "entryEnv": "VITE_HOST_ENTRY" } },
+  "shared": { "vue": { "singleton": true, "requiredVersion": "^3.5.0" } },
+  "bundleAllCSS": true,
+  "shareStrategy": "loaded-first"
+}
 ```
 
-**Host** (`apps/host/vite.config.js`):
+**Host** keeps its options inline in `apps/host/vite.config.mjs`:
 
 ```js
 federation({
   name: 'host',
+  exposes: { './ui-dev': './src/ui-dev/index.mjs' },
   remotes: {
-    shellA: { type: 'module', name: 'shellA', entry: env.VITE_SHELL_A_ENTRY, entryGlobalName: 'shellA', shareScope: 'default' },
-    shellB: { type: 'module', name: 'shellB', entry: env.VITE_SHELL_B_ENTRY, entryGlobalName: 'shellB', shareScope: 'default' },
+    shellA: { type: 'module', name: 'shellA', entry: env.raw.VITE_SHELL_A_ENTRY, entryGlobalName: 'shellA' },
+    shellB: { type: 'module', name: 'shellB', entry: env.raw.VITE_SHELL_B_ENTRY, entryGlobalName: 'shellB' },
   },
   shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } },
+  bundleAllCSS: true,
+  shareStrategy: 'loaded-first',
 })
 ```
 
-The host imports `shellA/App` like a normal module. `src/utils/defineRemoteComponent.js`
+The host imports `shellA/App` like a normal module. `src/utils/defineRemoteComponent.mjs`
 wraps it in `defineAsyncComponent` with loading and error components, so a remote that
 is down shows a friendly card instead of breaking the page.
 
+`shareStrategy: 'loaded-first'` stops the runtime from fetching every remote's
+`remoteEntry.js` up front. Without it, a standalone shell-b that loads `host/ui-dev` would
+also try to fetch shell-a.
+
+### Shared UI library
+
+See [ui-dev](UI_DEV_LIBRARY.md). Remotes write `<UiButton>` with no import, and a
+components resolver turns it into `import { UiButton } from 'host/ui-dev'`. Each remote's
+exposed entry (`src/expose/App.mjs`) awaits `host/ui-dev` before the host renders it.
+
 ### What is shared and why
 
-| Package | Shared? | Reason |
+| Package / module | Shared? | Reason |
 | --- | --- | --- |
 | `vue` | ✅ singleton | Remotes render inside the host's Vue app; two Vue runtimes would break reactivity and `provide/inject`. |
+| `host/ui-dev` | ✅ exposed module | One component library, owned and served by the host. |
 | `vue-router` | ❌ | Only the host routes. Remotes expose components, not routers. |
 | `vuex` | ❌ | Each app must own its store and its Vuex version. |
 | `axios` | ❌ | Each app owns its HTTP client, interceptors and defaults (requirement). |
@@ -74,7 +97,7 @@ Because remotes render **inside the host's Vue app**, a bare `useStore()` in a r
 would resolve the *host's* store (or nothing). To keep stores isolated:
 
 1. Every app creates its store **and its own injection key**:
-   `hostStoreKey`, `shellAStoreKey`, `shellBStoreKey` (`src/store/index.js`).
+   `hostStoreKey`, `shellAStoreKey`, `shellBStoreKey` (`src/store/index.mjs`).
 2. The host installs its store with `app.use(store, hostStoreKey)`.
 3. Each remote's root `App.vue` calls `provide(shellAStoreKey, store)`, so its whole
    subtree resolves its own store, both inside the host and standalone.
@@ -85,7 +108,7 @@ All modules are `namespaced: true`.
 
 ## 3. Private axios instances
 
-`src/services/http.js` exists in **every** app and calls `axios.create()`:
+`src/services/http.mjs` exists in **every** app and calls `axios.create()`:
 
 | App | baseURL (dev) | timeout | Header |
 | --- | --- | --- | --- |
@@ -98,7 +121,7 @@ and axios is not in `shared`, so every bundle carries its own copy.
 
 ## 4. Authentication contract
 
-- The host logs in (`store/modules/auth.js` → `services/authService.js`).
+- The host logs in (`store/modules/auth.mjs` → `services/authService.mjs`).
 - The session `{ user, token }` is written to `sessionStorage['mfe.auth']`.
 - Each remote's axios request interceptor reads the token from that key and sends
   `Authorization: Bearer <token>`.
@@ -108,7 +131,7 @@ and axios is not in `shared`, so every bundle carries its own copy.
 Mock login: `demo / demo123`, `guest / guest123`. Set `VITE_USE_MOCK_AUTH=false` to use
 the real dummyjson endpoint (`emilys / emilyspass`).
 
-## 5. Event bus (`src/utils/mfeBus.js`, one copy per app)
+## 5. Event bus (`src/utils/mfeBus.mjs`, one copy per app)
 
 | Event | Publisher → Subscriber | Payload |
 | --- | --- | --- |
@@ -132,5 +155,6 @@ the header badges and dashboard cards.
 ## 7. Failure isolation
 
 - Remote unreachable → `RemoteFallback` error card (host keeps working).
+- Host unreachable → standalone remotes can't load `host/ui-dev` (run the host too).
 - API unreachable → the remote's service falls back to `src/services/fixtures`.
 - Remote throws during render → only that route's view is affected.
