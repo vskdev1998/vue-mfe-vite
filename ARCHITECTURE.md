@@ -3,11 +3,11 @@
 ```
                           Browser (one page, one Vue app instance)
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ HOST  http://localhost:5000                                                  │
+│ HOST  http://localhost:8080                                                  │
 │  vue-router · login guard · AppHeader · Vuex(hostStoreKey) · axios(host)     │
 │                                                                              │
 │   /shell-a  ──► defineRemoteComponent(() => import('shellA/App'))            │
-│                 │  loads http://localhost:5001/remoteEntry.js at runtime     │
+│                 │  loads http://localhost:8081/remoteEntry.js at runtime     │
 │                 ▼                                                            │
 │   EXPOSES host/ui-dev ◄──── <Ui*> components used by both remotes ───┐      │
 │   ┌──────────────────────────────┐   ┌──────────────────────────────┐ │      │

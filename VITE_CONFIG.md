@@ -41,6 +41,10 @@ const raw = loadEnv(mode, root, '')   // '' = every key, not only VITE_*
 | `open` | `VITE_OPEN` | `server.open` |
 | `publicUrl` / `origin` | `VITE_PUBLIC_URL` | build `base`, dev `server.origin` |
 | `corsOrigins` | `VITE_CORS_ORIGINS` | `server.cors` / `preview.cors` allow-list |
+| `allowedHosts` | `VITE_ALLOWED_HOSTS` | `server.allowedHosts`, `preview.allowedHosts` (`true` = any host) |
+| `buildEntry` | `VITE_BUILD_ENTRY` | `build.rollupOptions.input.main` (custom build entry, default `index.html`) |
+| `outDir` | `VITE_OUT_DIR` | `build.outDir` |
+| `assetsDir` | `VITE_ASSETS_DIR` | `build.assetsDir` + `entryFileNames` / `chunkFileNames` / `assetFileNames` prefix |
 | `sourcemap` | `VITE_SOURCEMAP` | `build.sourcemap` |
 | `dropConsole` | `VITE_DROP_CONSOLE` | `esbuild.pure` (console.log/debug) + `esbuild.drop` (debugger) |
 | `appName`, `appEnv` | `VITE_APP_NAME`, `VITE_APP_ENV` | `define: { __APP_NAME__, __APP_ENV__ }` |
@@ -51,9 +55,9 @@ const raw = loadEnv(mode, root, '')   // '' = every key, not only VITE_*
 ```
   env mode           development
       app            shell-a (development)
-      url            http://localhost:5001/
+      url            http://localhost:8081/
       api            https://dummyjson.com
-      remote:host    http://localhost:5000/remoteEntry.js
+      remote:host    http://localhost:8080/remoteEntry.js
       sourcemap      true
 ```
 
@@ -102,7 +106,35 @@ federation({
 })
 ```
 
-## 4. No TypeScript
+## 4. Allowed hosts and custom build entry
+
+```js
+server:  { allowedHosts: env.allowedHosts /* e.g. ['localhost', '127.0.0.1', '.localhost'] */ },
+preview: { allowedHosts: env.allowedHosts },
+build: {
+  outDir: env.outDir,
+  assetsDir: env.assetsDir,
+  rollupOptions: {
+    input: { main: resolve(root, env.buildEntry) },          // VITE_BUILD_ENTRY
+    output: {
+      entryFileNames: `${env.assetsDir}/[name]-[hash].js`,
+      chunkFileNames: `${env.assetsDir}/[name]-[hash].js`,
+      assetFileNames: `${env.assetsDir}/[name]-[hash][extname]`,
+    },
+  },
+},
+```
+
+- **allowedHosts**: Vite rejects requests whose `Host` header isn't `localhost`/an IP
+  (DNS-rebinding protection) with `403 Blocked request. This host is not allowed`. Add tunnel
+  or LAN names here, e.g. `VITE_ALLOWED_HOSTS=localhost,.ngrok-free.app,myapp.local`.
+  A leading dot allows all subdomains. `true` allows everything (avoid).
+- **Custom build entry**: point `VITE_BUILD_ENTRY` at another HTML file (e.g. `index.prod.html`
+  with different inline CSS or meta tags) without touching the config. `remoteEntry.js` is
+  still emitted by the federation plugin next to it.
+- **Ports are fixed**: host 8080, shell-a 8081, shell-b 8082 (`VITE_PORT`, `strictPort: true`).
+
+## 5. No TypeScript
 
 - All source and config files are `.mjs` / `.vue` with `<script setup>` in JavaScript.
 - `unplugin-auto-import` and `unplugin-vue-components` run with `dts: false`, so no `.d.ts`
@@ -111,7 +143,7 @@ federation({
   type-check (`checkJs: false`).
 - Federated type generation is off (`dts: false` in the federation options).
 
-## 5. Why `.mjs`
+## 6. Why `.mjs`
 
 `.mjs` is always ESM in Node, independent of `"type"` in `package.json`, so config files,
 scripts (`scripts/build-docs.mjs`) and source files all share one unambiguous module format.

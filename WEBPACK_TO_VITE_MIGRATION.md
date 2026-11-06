@@ -156,7 +156,7 @@ new ModuleFederationPlugin({
   exposes: { './App': './src/App.vue' },
   shared: { vue: { singleton: true, requiredVersion: '^3.5.0' } },
 })
-output: { publicPath: 'http://localhost:5001/' }
+output: { publicPath: 'http://localhost:8081/' }
 ```
 
 ```js
@@ -169,7 +169,7 @@ federation({
   bundleAllCSS: true,
 }),
 base: command === 'build' ? env.VITE_PUBLIC_URL : '/',
-server: { origin: 'http://localhost:5001', cors: true },
+server: { origin: 'http://localhost:8081', cors: true },
 build: { target: 'esnext' },
 ```
 
@@ -177,11 +177,11 @@ build: { target: 'esnext' },
 
 ```js
 // webpack
-remotes: { shellA: 'shellA@http://localhost:5001/remoteEntry.js' }
+remotes: { shellA: 'shellA@http://localhost:8081/remoteEntry.js' }
 
 // vite
 remotes: {
-  shellA: { type: 'module', name: 'shellA', entry: 'http://localhost:5001/remoteEntry.js', entryGlobalName: 'shellA' },
+  shellA: { type: 'module', name: 'shellA', entry: 'http://localhost:8081/remoteEntry.js', entryGlobalName: 'shellA' },
 }
 ```
 

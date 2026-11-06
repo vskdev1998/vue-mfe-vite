@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>%VITE_APP_TITLE% (standalone)</title>
     <!--
-      Only used when shell-b runs standalone (http://localhost:5002).
+      Only used when shell-b runs standalone (http://localhost:8082).
       Inline critical CSS: background + boot message before JS loads.
     -->
     <style>
@@ -43,7 +43,7 @@
     </style>
   </head>
   <body>
-    <div class="standalone-banner">Shell B running standalone · port 5002 · <a href="%VITE_HOST_URL%" style="color:#fff">open the host</a></div>
+    <div class="standalone-banner">Shell B running standalone · port 8082 · <a href="%VITE_HOST_URL%" style="color:#fff">open the host</a></div>
     <div id="app"></div>
     <script type="module" src="/src/main.mjs"></script>
   </body>

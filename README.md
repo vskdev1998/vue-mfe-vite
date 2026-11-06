@@ -4,9 +4,9 @@ A complete, working **Vue 3 + Vite 7 micro-frontend** monorepo built with **Modu
 
 | App | Role | Port | Exposes / consumes | Theme |
 | --- | --- | --- | --- | --- |
-| [`apps/host`](apps/host/README.md) | Container: routing, **login**, layout, header, **ui-dev library** | 5000 | consumes `shellA/App`, `shellB/App`; exposes `./ui-dev` | green |
-| [`apps/shell-a`](apps/shell-a/README.md) | Remote: product catalog + cart | 5001 | exposes `./App`; consumes `host/ui-dev` | indigo |
-| [`apps/shell-b`](apps/shell-b/README.md) | Remote: task board | 5002 | exposes `./App`; consumes `host/ui-dev` | teal |
+| [`apps/host`](apps/host/README.md) | Container: routing, **login**, layout, header, **ui-dev library** | 8080 | consumes `shellA/App`, `shellB/App`; exposes `./ui-dev` | green |
+| [`apps/shell-a`](apps/shell-a/README.md) | Remote: product catalog + cart | 8081 | exposes `./App`; consumes `host/ui-dev` | indigo |
+| [`apps/shell-b`](apps/shell-b/README.md) | Remote: task board | 8082 | exposes `./App`; consumes `host/ui-dev` | teal |
 
 ### What's inside
 
@@ -32,17 +32,17 @@ Requirements: **Node 20.19+ or 22.12+** (Vite 7 requirement) and npm 10+.
 
 ```bash
 npm install          # installs all three workspaces
-npm run dev          # starts host :5000, shell-a :5001, shell-b :5002 together
+npm run dev          # starts host :8080, shell-a :8081, shell-b :8082 together
 ```
 
-Open **http://localhost:5000** and sign in with **`demo / demo123`** (or `guest / guest123`).
+Open **http://localhost:8080** and sign in with **`demo / demo123`** (or `guest / guest123`).
 
-Each remote also runs on its own: http://localhost:5001 and http://localhost:5002.
+Each remote also runs on its own: http://localhost:8081 and http://localhost:8082.
 
 ### Production build, locally
 
 ```bash
-npm run start        # = build:localprod (all apps) + vite preview on 5000/5001/5002
+npm run start        # = build:localprod (all apps) + vite preview on 8080/8081/8082
 ```
 
 ### All scripts (root)
@@ -66,20 +66,21 @@ npm run start        # = build:localprod (all apps) + vite preview on 5000/5001/
 vue-mfe-vite/
 ├─ package.json              # npm workspaces + orchestration scripts
 ├─ scripts/                  # build-docs.mjs + docs-template.html
-├─ docs/
-│  ├─ site/index.html        # generated developer docs site (open in a browser)
-│  ├─ ARCHITECTURE.md        # how host/remotes, stores, axios, events fit together
-│  ├─ VITE_CONFIG.md         # vite.config.mjs ← .env.[mode] + shared.federation.json
-│  ├─ UI_DEV_LIBRARY.md      # the shared ui-dev component library
-│  ├─ ENVIRONMENTS.md        # every env file and variable, per app
-│  ├─ VITE7_GUIDE.md         # Vite 7 explained using this repo
-│  └─ WEBPACK_TO_VITE_MIGRATION.md
+├─ README.md                 # you are here
+├─ MODULE_FEDERATION.md      # MF setup, every option, snippets, every error code + fix
+├─ ARCHITECTURE.md           # how host/remotes, stores, axios, events fit together
+├─ VITE_CONFIG.md            # vite.config.mjs ← .env.[mode] + shared.federation.json
+├─ ENVIRONMENTS.md           # every env file and variable, per app
+├─ UI_DEV_LIBRARY.md         # the shared ui-dev component library
+├─ VITE7_GUIDE.md            # Vite 7 explained using this repo
+├─ WEBPACK_TO_VITE_MIGRATION.md
+├─ docs/site/index.html      # generated developer docs site (also served by the host at /docs/)
 └─ apps/
-   ├─ host/                  # :5000
+   ├─ host/                  # :8080
    │  ├─ vite.config.mjs     # federation options inline (exposes ./ui-dev)
    │  └─ src/ui-dev/         # shared UI library (index.mjs, components/, styles/)
-   ├─ shell-a/               # :5001
-   └─ shell-b/               # :5002
+   ├─ shell-a/               # :8081
+   └─ shell-b/               # :8082
       ├─ .env, .env.development, .env.localprod, .env.staging, .env.production, .env.example
       ├─ shared.federation.json   # (remotes only) name, exposes, remotes, shared
       ├─ config/env.mjs           # loads + validates .env.[mode] for vite.config.mjs
@@ -101,14 +102,15 @@ vue-mfe-vite/
 
 ## Documentation
 
-**Developer docs site:** open [`docs/site/index.html`](docs/site/index.html) in a browser (works from disk), or run `npm run docs` to serve it at http://localhost:5050. It is generated from the Markdown files below by `scripts/build-docs.mjs`; after editing any `.md`, run `npm run docs:build`.
+**Developer docs site:** open [`docs/site/index.html`](docs/site/index.html) in a browser (works from disk), or click **Docs** in the host's nav bar (served at http://localhost:8080/docs/index.html), or run `npm run docs` to serve it at http://localhost:5050. It is generated from the Markdown files below by `scripts/build-docs.mjs`; after editing any `.md`, run `npm run docs:build`.
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [How vite.config.mjs is built (env + shared.federation.json)](docs/VITE_CONFIG.md)
-- [ui-dev shared UI library](docs/UI_DEV_LIBRARY.md)
-- [Environments & env files](docs/ENVIRONMENTS.md)
-- [Vite 7 guide](docs/VITE7_GUIDE.md)
-- [Migrating from webpack (Vue CLI / webpack 5 Module Federation) to Vite](docs/WEBPACK_TO_VITE_MIGRATION.md)
+- [Module Federation: setup, all options, snippets, every error + fix](MODULE_FEDERATION.md)
+- [Architecture](ARCHITECTURE.md)
+- [How vite.config.mjs is built (env + shared.federation.json)](VITE_CONFIG.md)
+- [ui-dev shared UI library](UI_DEV_LIBRARY.md)
+- [Environments & env files](ENVIRONMENTS.md)
+- [Vite 7 guide](VITE7_GUIDE.md)
+- [Migrating from webpack (Vue CLI / webpack 5 Module Federation) to Vite](WEBPACK_TO_VITE_MIGRATION.md)
 - App READMEs: [host](apps/host/README.md) · [shell-a](apps/shell-a/README.md) · [shell-b](apps/shell-b/README.md)
 
 ## Troubleshooting
@@ -116,9 +118,11 @@ vue-mfe-vite/
 | Symptom | Fix |
 | --- | --- |
 | "Shell A is unavailable" card in the host | The remote isn't running. `npm run dev` at the root starts all apps. Check `VITE_SHELL_A_ENTRY`. |
-| Standalone remote shows nothing / `RUNTIME-008` for `:5000/remoteEntry.js` | Remotes load `host/ui-dev` from the host. Start the host too (`npm run dev` starts all three). |
+| Standalone remote shows nothing / `RUNTIME-008` for `:8080/remoteEntry.js` | Remotes load `host/ui-dev` from the host. Start the host too (`npm run dev` starts all three). |
 | `missing env for mode "…"` on start | Add the listed keys to `.env.[mode]` of that app (see `.env.example`). |
-| Port already in use | Ports are `strictPort`. Free 5000–5002 or change `VITE_PORT` (and the host's `VITE_SHELL_*_ENTRY`). |
+| `GET http://localhost:5000/ 403 (Forbidden)` on macOS | macOS AirPlay Receiver owns port 5000. This repo now uses 8080–8082; or disable AirPlay Receiver in System Settings. |
+| `Blocked request. This host is not allowed` | Add the host name to `VITE_ALLOWED_HOSTS` in that app's `.env.[mode]`. |
+| Port already in use | Ports are `strictPort`. Free 8080–8082 or change `VITE_PORT` (and the host's `VITE_SHELL_*_ENTRY`). |
 | Remote chunks 404 in production | The remote's `VITE_PUBLIC_URL` (build `base`) must be the URL it is deployed at. |
 | Products / tasks show fixture data | The public APIs (dummyjson / jsonplaceholder) were unreachable; the services fell back to `src/services/fixtures`. |
 | `Unsupported engine` / Vite won't start | Upgrade Node to 20.19+ or 22.12+. |

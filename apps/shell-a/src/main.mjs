@@ -1,4 +1,4 @@
-// STANDALONE bootstrap for shell-a (http://localhost:5001).
+// STANDALONE bootstrap for shell-a (http://localhost:8081).
 // The host never executes this file: it imports ./App through remoteEntry.js.
 import { createApp } from 'vue'
 import App from './App.vue'

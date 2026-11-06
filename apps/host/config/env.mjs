@@ -15,6 +15,8 @@ const REQUIRED = ['VITE_APP_NAME', 'VITE_PORT', 'VITE_PUBLIC_URL', 'VITE_API_BAS
 const bool = (v, fallback = false) => (v === undefined || v === '' ? fallback : v === 'true')
 const list = (v) => (v ? v.split(',').map((s) => s.trim()).filter(Boolean) : [])
 const trimSlash = (url) => url.replace(/\/$/, '')
+/** "true" → true (allow any host, NOT recommended), otherwise a host list */
+const hosts = (v) => (v === 'true' ? true : list(v))
 
 /**
  * @param {string} mode       Vite mode (development | localprod | staging | production)
@@ -46,6 +48,12 @@ export function readEnv(mode, root = process.cwd(), extra = []) {
     origin: trimSlash(publicUrl),
     apiBaseUrl: raw.VITE_API_BASE_URL,
     corsOrigins: list(raw.VITE_CORS_ORIGINS),
+    // server.allowedHosts / preview.allowedHosts (Vite blocks unknown Host headers)
+    allowedHosts: hosts(raw.VITE_ALLOWED_HOSTS),
+    // custom build entry + output layout
+    buildEntry: raw.VITE_BUILD_ENTRY || 'index.html',
+    outDir: raw.VITE_OUT_DIR || 'dist',
+    assetsDir: raw.VITE_ASSETS_DIR || 'assets',
     sourcemap: bool(raw.VITE_SOURCEMAP, mode !== 'production'),
     dropConsole: bool(raw.VITE_DROP_CONSOLE, mode === 'production'),
   }
@@ -62,6 +70,8 @@ export function envBanner(env, remotes = {}) {
         url: env.publicUrl,
         api: env.apiBaseUrl,
         ...Object.fromEntries(Object.entries(remotes).map(([k, v]) => [`remote:${k}`, v])),
+        entry: `${env.buildEntry} → ${env.outDir}/`,
+        allowedHosts: Array.isArray(env.allowedHosts) ? env.allowedHosts.join(', ') || '(localhost only)' : 'any',
         sourcemap: String(env.sourcemap),
       }
       config.logger.info(

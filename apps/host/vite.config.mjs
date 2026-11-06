@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { federation } from '@module-federation/vite'
@@ -108,6 +109,8 @@ export default defineConfig(({ command, mode }) => {
       port: env.port,
       strictPort: true,
       open: env.open,
+      // Extra Host headers the dev server accepts (e.g. a tunnel or *.local name)
+      allowedHosts: Array.isArray(env.allowedHosts) ? [...env.allowedHosts] : env.allowedHosts,
       origin: env.origin, // absolute dev URLs, needed because remotes load host/ui-dev
       cors: env.corsOrigins.length ? { origin: env.corsOrigins } : true,
     },
@@ -115,6 +118,7 @@ export default defineConfig(({ command, mode }) => {
       host: env.devHost,
       port: env.port,
       strictPort: true,
+      allowedHosts: Array.isArray(env.allowedHosts) ? [...env.allowedHosts] : env.allowedHosts,
       cors: env.corsOrigins.length ? { origin: env.corsOrigins } : true,
     },
 
@@ -128,6 +132,18 @@ export default defineConfig(({ command, mode }) => {
       // Module Federation runtime relies on top-level await
       target: 'esnext',
       sourcemap: env.sourcemap,
+      outDir: env.outDir,
+      assetsDir: env.assetsDir,
+      emptyOutDir: true,
+      rollupOptions: {
+        // Custom build entry (VITE_BUILD_ENTRY). Defaults to index.html.
+        input: { main: resolve(root, env.buildEntry) },
+        output: {
+          entryFileNames: `${env.assetsDir}/[name]-[hash].js`,
+          chunkFileNames: `${env.assetsDir}/[name]-[hash].js`,
+          assetFileNames: `${env.assetsDir}/[name]-[hash][extname]`,
+        },
+      },
     },
   }
 })

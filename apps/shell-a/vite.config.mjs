@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'node:url'
+import { resolve } from 'node:path'
 import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -72,6 +73,8 @@ export default defineConfig(({ command, mode }) => {
       port: env.port,
       strictPort: true,
       open: env.open,
+      // Extra Host headers the dev server accepts (e.g. a tunnel or *.local name)
+      allowedHosts: Array.isArray(env.allowedHosts) ? [...env.allowedHosts] : env.allowedHosts,
       // Absolute dev asset URLs so they load correctly inside the host page
       origin: env.origin,
       cors: env.corsOrigins.length ? { origin: env.corsOrigins } : true,
@@ -80,6 +83,7 @@ export default defineConfig(({ command, mode }) => {
       host: env.devHost,
       port: env.port,
       strictPort: true,
+      allowedHosts: Array.isArray(env.allowedHosts) ? [...env.allowedHosts] : env.allowedHosts,
       cors: env.corsOrigins.length ? { origin: env.corsOrigins } : true,
     },
 
@@ -91,6 +95,18 @@ export default defineConfig(({ command, mode }) => {
     build: {
       target: 'esnext',
       sourcemap: env.sourcemap,
+      outDir: env.outDir,
+      assetsDir: env.assetsDir,
+      emptyOutDir: true,
+      rollupOptions: {
+        // Custom build entry (VITE_BUILD_ENTRY). Defaults to index.html.
+        input: { main: resolve(root, env.buildEntry) },
+        output: {
+          entryFileNames: `${env.assetsDir}/[name]-[hash].js`,
+          chunkFileNames: `${env.assetsDir}/[name]-[hash].js`,
+          assetFileNames: `${env.assetsDir}/[name]-[hash][extname]`,
+        },
+      },
     },
   }
 })

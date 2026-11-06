@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Builds docs/site/index.html: one self-contained developer documentation page
+ * Builds docs/site/index.html (and the host's /docs copy): one self-contained developer documentation page
  * generated from the Markdown files in this repo (single source of truth).
  *
  *   npm run docs:build   → regenerate docs/site/index.html
@@ -18,15 +18,16 @@ const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
 
 const PAGES = [
   { id: 'overview', group: 'Getting started', title: 'Overview', file: 'README.md' },
-  { id: 'architecture', group: 'Guides', title: 'Architecture', file: 'docs/ARCHITECTURE.md' },
-  { id: 'vite-config', group: 'Guides', title: 'vite.config.mjs + env', file: 'docs/VITE_CONFIG.md' },
-  { id: 'environments', group: 'Guides', title: 'Environments', file: 'docs/ENVIRONMENTS.md' },
-  { id: 'ui-dev', group: 'Guides', title: 'ui-dev UI library', file: 'docs/UI_DEV_LIBRARY.md' },
-  { id: 'vite7', group: 'Guides', title: 'Vite 7 guide', file: 'docs/VITE7_GUIDE.md' },
-  { id: 'migration', group: 'Guides', title: 'webpack → Vite migration', file: 'docs/WEBPACK_TO_VITE_MIGRATION.md' },
-  { id: 'host', group: 'Apps', title: 'Host · :5000', file: 'apps/host/README.md' },
-  { id: 'shell-a', group: 'Apps', title: 'Shell A · :5001', file: 'apps/shell-a/README.md' },
-  { id: 'shell-b', group: 'Apps', title: 'Shell B · :5002', file: 'apps/shell-b/README.md' },
+  { id: 'module-federation', group: 'Module Federation', title: 'Setup, options & errors', file: 'MODULE_FEDERATION.md' },
+  { id: 'architecture', group: 'Guides', title: 'Architecture', file: 'ARCHITECTURE.md' },
+  { id: 'vite-config', group: 'Guides', title: 'vite.config.mjs + env', file: 'VITE_CONFIG.md' },
+  { id: 'environments', group: 'Guides', title: 'Environments', file: 'ENVIRONMENTS.md' },
+  { id: 'ui-dev', group: 'Guides', title: 'ui-dev UI library', file: 'UI_DEV_LIBRARY.md' },
+  { id: 'vite7', group: 'Guides', title: 'Vite 7 guide', file: 'VITE7_GUIDE.md' },
+  { id: 'migration', group: 'Guides', title: 'webpack → Vite migration', file: 'WEBPACK_TO_VITE_MIGRATION.md' },
+  { id: 'host', group: 'Apps', title: 'Host · :8080', file: 'apps/host/README.md' },
+  { id: 'shell-a', group: 'Apps', title: 'Shell A · :8081', file: 'apps/shell-a/README.md' },
+  { id: 'shell-b', group: 'Apps', title: 'Shell B · :8082', file: 'apps/shell-b/README.md' },
 ]
 
 const byFile = new Map(PAGES.map((p) => [p.file, p.id]))
@@ -78,7 +79,7 @@ function renderPage(page) {
           const abs = posix.normalize(posix.join(posix.dirname(page.file), path))
           const id = byFile.get(abs)
           if (id) target = `#/${id}${hash ? '/' + hash : ''}`
-          else target = posix.relative('docs/site', abs) // e.g. ../../apps/host/vite.config.js
+          else target = `https://github.com/vskdev1998/vue-mfe-vite/blob/main/${abs}` // repo file
         } else if (href.startsWith('#')) {
           target = `#/${page.id}/${href.slice(1)}`
         }
@@ -133,6 +134,9 @@ const out = template
   .replaceAll('%VERSION%', pkg.version)
   .replace('%BUILT%', new Date().toISOString().slice(0, 10))
 
-mkdirSync(resolve(root, 'docs/site'), { recursive: true })
-writeFileSync(resolve(root, 'docs/site/index.html'), out)
-console.log(`docs/site/index.html written (${pages.length} pages, ${(out.length / 1024).toFixed(0)} kB)`)
+// 1) repo copy (open from disk)   2) host copy (served at /docs/index.html, linked from the nav bar)
+for (const target of ['docs/site/index.html', 'apps/host/public/docs/index.html']) {
+  mkdirSync(dirname(resolve(root, target)), { recursive: true })
+  writeFileSync(resolve(root, target), out)
+}
+console.log(`docs/site/index.html + apps/host/public/docs/index.html written (${pages.length} pages, ${(out.length / 1024).toFixed(0)} kB)`)

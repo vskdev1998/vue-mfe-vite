@@ -1,4 +1,4 @@
-# Host app (`@mfe/host`) · port 5000
+# Host app (`@mfe/host`) · port 8080
 
 The container application. It owns the URL, the **login**, the layout and the header, and
 loads the two remote micro-frontends at runtime with Module Federation.
@@ -12,7 +12,7 @@ npm run dev
 npm run dev -w @mfe/host
 ```
 
-Open http://localhost:5000 → you're redirected to `/login`. Sign in with `demo / demo123`.
+Open http://localhost:8080 → you're redirected to `/login`. Sign in with `demo / demo123`.
 
 ## Features
 
@@ -43,7 +43,7 @@ federation({ name: 'host', exposes: { './ui-dev': './src/ui-dev/index.mjs' }, �
 - `VITE_CORS_ORIGINS` must list every remote origin that loads it.
 
 Components: `UiButton`, `UiCard`, `UiInput`, `UiBadge`, `UiSpinner`, `UiAlert`.
-Full reference: [docs/UI_DEV_LIBRARY.md](../../docs/UI_DEV_LIBRARY.md).
+Full reference: [docs/UI_DEV_LIBRARY.md](../../UI_DEV_LIBRARY.md).
 
 ## Vite config and env
 
@@ -51,7 +51,7 @@ Full reference: [docs/UI_DEV_LIBRARY.md](../../docs/UI_DEV_LIBRARY.md).
 from `config/env.mjs`, which loads `.env` + `.env.[mode]` and validates them. Port, host,
 `server.origin`, CORS, `base`, sourcemaps, console stripping and remote URLs all come from
 there. The host's federation options stay inline in `vite.config.mjs`; only the remotes use
-`shared.federation.json`. See [docs/VITE_CONFIG.md](../../docs/VITE_CONFIG.md).
+`shared.federation.json`. See [docs/VITE_CONFIG.md](../../VITE_CONFIG.md).
 
 ## Routes
 
@@ -83,7 +83,7 @@ the token from there. Logout clears it and broadcasts `mfe:auth-changed`.
 ## Env files
 
 `.env`, `.env.development`, `.env.localprod`, `.env.staging`, `.env.production`, `.env.example`.
-Details: [docs/ENVIRONMENTS.md](../../docs/ENVIRONMENTS.md).
+Details: [docs/ENVIRONMENTS.md](../../ENVIRONMENTS.md).
 
 ## Migrating this app from webpack
 
@@ -91,7 +91,7 @@ If this host used to be a Vue CLI / webpack 5 app, these are the concrete change
 
 | Before (webpack) | After (this app) |
 | --- | --- |
-| `vue.config.js` with `ModuleFederationPlugin({ remotes: { shellA: 'shellA@http://localhost:5001/remoteEntry.js' } })` | `vite.config.mjs` → `federation({ remotes: { shellA: { type: 'module', entry: env.VITE_SHELL_A_ENTRY, … } } })` |
+| `vue.config.js` with `ModuleFederationPlugin({ remotes: { shellA: 'shellA@http://localhost:8081/remoteEntry.js' } })` | `vite.config.mjs` → `federation({ remotes: { shellA: { type: 'module', entry: env.VITE_SHELL_A_ENTRY, … } } })` |
 | `src/main.js` → `import('./bootstrap')` async boundary | Single `src/main.mjs`, no bootstrap file |
 | `public/index.html` with `<%= htmlWebpackPlugin.options.title %>` | Root `index.html` with `%VITE_APP_TITLE%` and inline critical CSS |
 | `VUE_APP_SHELL_A_URL` / `process.env` | `VITE_SHELL_A_ENTRY` / `loadEnv()` in config, `import.meta.env` in code |
@@ -99,6 +99,6 @@ If this host used to be a Vue CLI / webpack 5 app, these are the concrete change
 | `app.component(...)` global registration | `unplugin-vue-components` (`src/components` auto-registered) |
 | `axios.defaults.baseURL = ...` | `axios.create()` in `src/services/http.mjs` |
 | `app.use(store)` | `app.use(store, hostStoreKey)` + `useHostStore()` |
-| `devServer: { port: 5000, historyApiFallback: true }` | `server: { port, strictPort: true }` (history fallback built in) |
+| `devServer: { port: 8080, historyApiFallback: true }` | `server: { port, strictPort: true }` (history fallback built in) |
 
-Full guide: [docs/WEBPACK_TO_VITE_MIGRATION.md](../../docs/WEBPACK_TO_VITE_MIGRATION.md).
+Full guide: [docs/WEBPACK_TO_VITE_MIGRATION.md](../../WEBPACK_TO_VITE_MIGRATION.md).

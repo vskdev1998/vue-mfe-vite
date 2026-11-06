@@ -26,7 +26,7 @@ All values are loaded by each app's `config/env.mjs` and used in `vite.config.mj
 | Variable | development | localprod | staging | production | Used for |
 | --- | --- | --- | --- | --- | --- |
 | `VITE_APP_NAME` | (in `.env`) | | | | `X-Client-App` header, `__APP_NAME__` |
-| `VITE_PORT` | 5000 / 5001 / 5002 (in `.env`) | | | | `server.port`, `preview.port` |
+| `VITE_PORT` | 8080 / 8081 / 8082 (in `.env`) | | | | `server.port`, `preview.port` |
 | `VITE_DEV_HOST` | localhost (in `.env`) | | | | `server.host` |
 | `VITE_APP_ENV` | development | localprod | staging | production | `__APP_ENV__` |
 | `VITE_PUBLIC_URL` | http://localhost:500x/ | http://localhost:500x/ | https://…staging.example.com/ | https://….example.com/ | dev `server.origin`, build `base` |
@@ -34,16 +34,19 @@ All values are loaded by each app's `config/env.mjs` and used in `vite.config.mj
 | `VITE_SOURCEMAP` | true | true | true | false | `build.sourcemap` |
 | `VITE_DROP_CONSOLE` | false | true | false | true | strip `console.log/debug` + `debugger` |
 | `VITE_CORS_ORIGINS` | see below | | | | `server.cors` / `preview.cors` |
+| `VITE_ALLOWED_HOSTS` | localhost,127.0.0.1,.localhost | same | .staging.example.com | .example.com | `server/preview.allowedHosts` |
+| `VITE_BUILD_ENTRY` | index.html | index.html | index.html | index.html | custom build entry (`rollupOptions.input`) |
+| `VITE_OUT_DIR` / `VITE_ASSETS_DIR` | dist / assets | | | | `build.outDir` / `build.assetsDir` |
 | `VITE_API_TIMEOUT` | 10000 host / 8000 remotes (in `.env`) | | | | axios timeout |
 
 ## Host (`apps/host`)
 
 | Variable | development / localprod | staging | production |
 | --- | --- | --- | --- |
-| `VITE_PUBLIC_URL` | http://localhost:5000/ | https://staging.example.com/ | https://app.example.com/ |
-| `VITE_CORS_ORIGINS` (who may load `host/ui-dev`) | http://localhost:5001,http://localhost:5002 | https://shell-a.staging.example.com,https://shell-b.staging.example.com | https://shell-a.example.com,https://shell-b.example.com |
-| `VITE_SHELL_A_ENTRY` | http://localhost:5001/remoteEntry.js | https://shell-a.staging.example.com/remoteEntry.js | https://shell-a.example.com/remoteEntry.js |
-| `VITE_SHELL_B_ENTRY` | http://localhost:5002/remoteEntry.js | https://shell-b.staging.example.com/remoteEntry.js | https://shell-b.example.com/remoteEntry.js |
+| `VITE_PUBLIC_URL` | http://localhost:8080/ | https://staging.example.com/ | https://app.example.com/ |
+| `VITE_CORS_ORIGINS` (who may load `host/ui-dev`) | http://localhost:8081,http://localhost:8082 | https://shell-a.staging.example.com,https://shell-b.staging.example.com | https://shell-a.example.com,https://shell-b.example.com |
+| `VITE_SHELL_A_ENTRY` | http://localhost:8081/remoteEntry.js | https://shell-a.staging.example.com/remoteEntry.js | https://shell-a.example.com/remoteEntry.js |
+| `VITE_SHELL_B_ENTRY` | http://localhost:8082/remoteEntry.js | https://shell-b.staging.example.com/remoteEntry.js | https://shell-b.example.com/remoteEntry.js |
 | `VITE_API_BASE_URL` | https://dummyjson.com | https://api.staging.example.com | https://api.example.com |
 | `VITE_USE_MOCK_AUTH` | true | false | false |
 
@@ -55,9 +58,9 @@ All values are loaded by each app's `config/env.mjs` and used in `vite.config.mj
 | Variable | development / localprod | staging | production |
 | --- | --- | --- | --- |
 | `VITE_PUBLIC_URL` | http://localhost:500x/ | https://shell-x.staging.example.com/ | https://shell-x.example.com/ |
-| `VITE_CORS_ORIGINS` (who may load this remote) | http://localhost:5000 | https://staging.example.com | https://app.example.com |
-| `VITE_HOST_URL` | http://localhost:5000/ | https://staging.example.com/ | https://app.example.com/ |
-| `VITE_HOST_ENTRY` (where `host/ui-dev` comes from) | http://localhost:5000/remoteEntry.js | https://staging.example.com/remoteEntry.js | https://app.example.com/remoteEntry.js |
+| `VITE_CORS_ORIGINS` (who may load this remote) | http://localhost:8080 | https://staging.example.com | https://app.example.com |
+| `VITE_HOST_URL` | http://localhost:8080/ | https://staging.example.com/ | https://app.example.com/ |
+| `VITE_HOST_ENTRY` (where `host/ui-dev` comes from) | http://localhost:8080/remoteEntry.js | https://staging.example.com/remoteEntry.js | https://app.example.com/remoteEntry.js |
 | `VITE_API_BASE_URL` | dummyjson (A) / jsonplaceholder (B) | same | same |
 | `VITE_USE_MOCK_API` | false | false | false |
 
@@ -65,8 +68,8 @@ All values are loaded by each app's `config/env.mjs` and used in `vite.config.mj
 
 `VITE_PUBLIC_URL` is the most important remote variable:
 
-- **dev**: becomes `server.origin`, so the remote's dev assets are requested from `:5001`
-  even though the page is the host on `:5000`.
+- **dev**: becomes `server.origin`, so the remote's dev assets are requested from `:8081`
+  even though the page is the host on `:8080`.
 - **build**: becomes Vite's `base`. `remoteEntry.js` imports its chunks relative to this URL.
   If it's wrong, the host loads `remoteEntry.js` and then 404s on every chunk.
 

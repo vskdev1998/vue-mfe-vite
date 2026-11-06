@@ -6,7 +6,7 @@
     <title>%VITE_APP_TITLE% (standalone)</title>
     <!--
       index.html is ONLY used when shell-a runs standalone (npm run dev -w @mfe/shell-a
-      and open http://localhost:5001). When the host consumes shell-a it loads
+      and open http://localhost:8081). When the host consumes shell-a it loads
       remoteEntry.js instead, so nothing in this file leaks into the host.
 
       Inline critical CSS: page background + boot splash before JS arrives.
@@ -46,7 +46,7 @@
     </style>
   </head>
   <body>
-    <div class="standalone-banner">Shell A running standalone · port 5001 · <a href="%VITE_HOST_URL%" style="color:#fff">open the host</a></div>
+    <div class="standalone-banner">Shell A running standalone · port 8081 · <a href="%VITE_HOST_URL%" style="color:#fff">open the host</a></div>
     <div id="app"></div>
     <script type="module" src="/src/main.mjs"></script>
   </body>
