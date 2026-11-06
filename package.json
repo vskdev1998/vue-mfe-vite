@@ -20,9 +20,12 @@
     "build:localprod": "npm run build:localprod -w @mfe/shell-a && npm run build:localprod -w @mfe/shell-b && npm run build:localprod -w @mfe/host",
     "preview": "concurrently -k -n host,shell-a,shell-b -c blue,green,magenta \"npm run preview -w @mfe/host\" \"npm run preview -w @mfe/shell-a\" \"npm run preview -w @mfe/shell-b\"",
     "start": "npm run build:localprod && npm run preview",
-    "clean": "rm -rf apps/*/dist apps/*/node_modules/.vite apps/*/.__mf__temp"
+    "clean": "rm -rf apps/*/dist apps/*/node_modules/.vite apps/*/.__mf__temp",
+    "docs:build": "node scripts/build-docs.mjs",
+    "docs": "node scripts/build-docs.mjs && vite docs/site --port 5050 --open"
   },
   "devDependencies": {
-    "concurrently": "^9.2.0"
+    "concurrently": "^9.2.0",
+    "marked": "^18.1.3"
   }
 }

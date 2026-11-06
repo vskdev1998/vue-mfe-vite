@@ -52,6 +52,8 @@ npm run start        # = build:localprod (all apps) + vite preview on 5000/5001/
 | `npm run build:localprod` | Production bundles pointing at localhost (`.env.localprod`) |
 | `npm run preview` | Serve every `dist/` with `vite preview` |
 | `npm run start` | `build:localprod` + `preview` |
+| `npm run docs` | Build the docs site and serve it on :5050 |
+| `npm run docs:build` | Regenerate `docs/site/index.html` from the Markdown |
 | `npm run clean` | Remove `dist/` and federation temp folders |
 
 ## Repository layout
@@ -59,7 +61,9 @@ npm run start        # = build:localprod (all apps) + vite preview on 5000/5001/
 ```
 vue-mfe-vite/
 ├─ package.json            # npm workspaces + orchestration scripts
+├─ scripts/                # build-docs.mjs + docs-template.html
 ├─ docs/
+│  ├─ site/index.html     # generated developer docs site (open in a browser)
 │  ├─ ARCHITECTURE.md      # how host/remotes, stores, axios, events fit together
 │  ├─ ENVIRONMENTS.md      # every env file and variable, per app
 │  ├─ VITE7_GUIDE.md       # Vite 7 explained using this repo
@@ -83,6 +87,8 @@ vue-mfe-vite/
 ```
 
 ## Documentation
+
+**Developer docs site:** open [`docs/site/index.html`](docs/site/index.html) in a browser (works from disk), or run `npm run docs` to serve it at http://localhost:5050. It is generated from the Markdown files below by `scripts/build-docs.mjs`; after editing any `.md`, run `npm run docs:build`.
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Environments & env files](docs/ENVIRONMENTS.md)
