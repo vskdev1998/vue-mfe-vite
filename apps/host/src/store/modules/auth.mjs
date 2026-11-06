@@ -20,7 +20,8 @@ export default {
   getters: {
     isAuthenticated: (state) => Boolean(state.token),
     displayName: (state) =>
-      state.user ? `${state.user.firstName} ${state.user.lastName}`.trim() : '',
+      // lodash (auto-imported as `_`): join non-empty parts, normalise casing
+      state.user ? _.startCase(_.compact([state.user.firstName, state.user.lastName]).join(' ')) : '',
   },
 
   mutations: {

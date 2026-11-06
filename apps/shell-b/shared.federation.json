@@ -20,7 +20,8 @@
   },
   "notShared": {
     "axios": "Private instance in src/services/http.mjs.",
-    "vuex": "Private store provided under its own key in src/App.vue."
+    "vuex": "Private store provided under its own key in src/App.vue.",
+    "lodash-es": "Bundled per app, auto-imported as `_` (unplugin-auto-import)."
   },
   "bundleAllCSS": true,
   "shareStrategy": "loaded-first"

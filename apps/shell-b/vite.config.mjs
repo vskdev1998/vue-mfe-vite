@@ -37,7 +37,15 @@ export default defineConfig(({ command, mode }) => {
       envBanner(env, resolveRemoteUrls(fed, env.raw)),
       vue(),
       AutoImport({
-        imports: ['vue', 'vuex'],
+        imports: [
+          'vue', 'vuex',
+          // lodash-es default export as `_` in <script> and .mjs files.
+          // Not in <template>: there `_` is Vue's internal instance (use a computed).
+          //   _.debounce(fn, 300)  →  import _ from 'lodash-es'
+          { 'lodash-es': [['default', '_']] },
+        ],
+        // Also transform .mjs files (the default only matches .js/.ts/.vue)
+        include: [/\.[cm]?[jt]sx?$/, /\.vue$/, /\.vue\?vue/],
         dirs: ['src/composables', 'src/utils'],
         dts: false, // plain JavaScript project
         vueTemplate: true,

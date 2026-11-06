@@ -2,10 +2,10 @@ import { emitMfeEvent } from '@/utils/mfeBus'
 
 /** Publish the cart summary so the host can show a badge. */
 function broadcast(state) {
-  const count = state.lines.reduce((n, l) => n + l.qty, 0)
+  const count = _.sumBy(state.lines, 'qty')
   emitMfeEvent('cart-updated', {
     count,
-    items: state.lines.map(({ id, title, qty }) => ({ id, title, qty })),
+    items: _.map(state.lines, (l) => _.pick(l, ['id', 'title', 'qty'])),
   })
 }
 
@@ -17,18 +17,19 @@ export default {
   }),
 
   getters: {
-    count: (s) => s.lines.reduce((n, l) => n + l.qty, 0),
-    total: (s) => s.lines.reduce((sum, l) => sum + l.qty * l.price, 0),
+    // lodash (auto-imported as `_`)
+    count: (s) => _.sumBy(s.lines, 'qty'),
+    total: (s) => _.round(_.sumBy(s.lines, (l) => l.qty * l.price), 2),
   },
 
   mutations: {
     ADD(state, product) {
-      const line = state.lines.find((l) => l.id === product.id)
+      const line = _.find(state.lines, { id: product.id })
       if (line) line.qty++
       else state.lines.push({ id: product.id, title: product.title, price: product.price, qty: 1 })
     },
     REMOVE(state, id) {
-      state.lines = state.lines.filter((l) => l.id !== id)
+      state.lines = _.reject(state.lines, { id })
     },
     CLEAR(state) {
       state.lines = []

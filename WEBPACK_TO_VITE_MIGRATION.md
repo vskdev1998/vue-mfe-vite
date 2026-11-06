@@ -229,6 +229,10 @@ file works for every environment. See [How vite.config.mjs is built](VITE_CONFIG
 
 ## 12. Checklist
 
+For package-by-package versions and a phase-by-phase checklist, see the
+[Migration kit: packages & versions](MIGRATION_CHECKLIST.md).
+
+
 - [ ] Node 20.19+ / 22.12+
 - [ ] `index.html` at root with `<script type="module" src="/src/main.mjs">`
 - [ ] `vite.config.mjs` with `@vitejs/plugin-vue` and the `@` alias

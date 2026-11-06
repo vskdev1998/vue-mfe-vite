@@ -2,7 +2,7 @@ import { taskService } from '@/services/taskService'
 import { emitMfeEvent } from '@/utils/mfeBus'
 
 function broadcast(state) {
-  const open = state.items.filter((t) => !t.done).length
+  const open = _.filter(state.items, { done: false }).length
   emitMfeEvent('tasks-updated', { open, total: state.items.length })
 }
 
@@ -17,27 +17,23 @@ export default {
   }),
 
   getters: {
+    // lodash (auto-imported as `_`)
     visible: (s) =>
-      s.filter === 'open'
-        ? s.items.filter((t) => !t.done)
-        : s.filter === 'done'
-          ? s.items.filter((t) => t.done)
-          : s.items,
-    counts: (s) => ({
-      all: s.items.length,
-      open: s.items.filter((t) => !t.done).length,
-      done: s.items.filter((t) => t.done).length,
-    }),
+      s.filter === 'all' ? s.items : _.filter(s.items, { done: s.filter === 'done' }),
+    counts: (s) => {
+      const by = _.countBy(s.items, (t) => (t.done ? 'done' : 'open'))
+      return { all: s.items.length, open: by.open ?? 0, done: by.done ?? 0 }
+    },
   },
 
   mutations: {
     SET_ITEMS: (s, items) => (s.items = items),
     PREPEND: (s, task) => s.items.unshift(task),
     TOGGLE: (s, id) => {
-      const t = s.items.find((x) => x.id === id)
+      const t = _.find(s.items, { id })
       if (t) t.done = !t.done
     },
-    REMOVE: (s, id) => (s.items = s.items.filter((x) => x.id !== id)),
+    REMOVE: (s, id) => (s.items = _.reject(s.items, { id })),
     SET_FILTER: (s, f) => (s.filter = f),
     SET_LOADING: (s, v) => (s.loading = v),
     SET_ERROR: (s, e) => (s.error = e),

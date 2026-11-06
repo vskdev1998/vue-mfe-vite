@@ -2,6 +2,10 @@
 
 A complete, working **Vue 3 + Vite 7 micro-frontend** monorepo built with **Module Federation**.
 
+> 📖 **Online docs:** [Vue MFE Vite Docs](https://claude.ai/artifact/UMcJnDL2Fnh5415m2mpLmt) (every guide in one page)
+> · Migrating a Vue 3 project to Vite 7? Start with the [Migration kit: packages & versions](MIGRATION_CHECKLIST.md).
+> · Local copy: `npm run docs:build`, then open `docs/site/index.html` or **Docs ↗** in the host header.
+
 | App | Role | Port | Exposes / consumes | Theme |
 | --- | --- | --- | --- | --- |
 | [`apps/host`](apps/host/README.md) | Container: routing, **login**, layout, header, **ui-dev library** | 8080 | consumes `shellA/App`, `shellB/App`; exposes `./ui-dev` | green |
@@ -18,7 +22,7 @@ A complete, working **Vue 3 + Vite 7 micro-frontend** monorepo built with **Modu
 - **Module Federation** via [`@module-federation/vite`](https://module-federation.io/integrations/build-tool/vite) (works in dev *and* build)
 - **Sass** (modern compiler API) with per-app design tokens injected through `additionalData`
 - **Critical CSS inline in each `index.html`** (background + boot splash before JS loads)
-- **Auto import**: `unplugin-auto-import` (vue, vuex, vue-router, own composables) and `unplugin-vue-components` (no manual component registration)
+- **Auto import**: `unplugin-auto-import` (vue, vuex, vue-router, own composables, lodash-es as `_`) and `unplugin-vue-components` (no manual component registration)
 - **Vuex 4: one independent store per app**, each installed/provided under its own injection key
 - **axios: one private instance per app** (own baseURL, timeout, interceptors, **own API gateway key**) and **not shared** through federation
 - **Mock API with gateway-key verification** (axios adapter): host login, shell-a products, shell-b todos. `npm run check:env` verifies keys for every app and mode
@@ -76,6 +80,7 @@ vue-mfe-vite/
 ├─ UI_DEV_LIBRARY.md         # the shared ui-dev component library
 ├─ VITE7_GUIDE.md            # Vite 7 explained using this repo
 ├─ WEBPACK_TO_VITE_MIGRATION.md
+├─ MIGRATION_CHECKLIST.md    # Vite 7 migration kit: packages, versions, step-by-step checklist
 ├─ docs/site/index.html      # generated developer docs site (also served by the host at /docs/)
 └─ apps/
    ├─ host/                  # :8080
@@ -104,15 +109,18 @@ vue-mfe-vite/
 
 ## Documentation
 
-**Developer docs site:** open [`docs/site/index.html`](docs/site/index.html) in a browser (works from disk), or click **Docs** in the host's nav bar (served at http://localhost:8080/docs/index.html), or run `npm run docs` to serve it at http://localhost:5050. It is generated from the Markdown files below by `scripts/build-docs.mjs`; after editing any `.md`, run `npm run docs:build`.
+**Online:** [Vue MFE Vite Docs](https://claude.ai/artifact/UMcJnDL2Fnh5415m2mpLmt), every page below in one site.
 
-- [Module Federation: setup, all options, snippets, every error + fix](MODULE_FEDERATION.md)
+**Developer docs site (local):** open [`docs/site/index.html`](docs/site/index.html) in a browser (works from disk), or click **Docs** in the host's nav bar (served at http://localhost:8080/docs/index.html), or run `npm run docs` to serve it at http://localhost:5050. It is generated from the Markdown files below by `scripts/build-docs.mjs`; after editing any `.md`, run `npm run docs:build`.
+
+- [Module Federation: setup, config methods & complete shapes, when to use what, all options, snippets, every error + fix](MODULE_FEDERATION.md)
 - [Architecture](ARCHITECTURE.md)
 - [How vite.config.mjs is built (env + shared.federation.json)](VITE_CONFIG.md)
 - [ui-dev shared UI library](UI_DEV_LIBRARY.md)
 - [Environments & env files](ENVIRONMENTS.md)
 - [Vite 7 guide](VITE7_GUIDE.md)
 - [Migrating from webpack (Vue CLI / webpack 5 Module Federation) to Vite](WEBPACK_TO_VITE_MIGRATION.md)
+- [Vite 7 migration kit: packages, versions & checklist](MIGRATION_CHECKLIST.md)
 - App READMEs: [host](apps/host/README.md) · [shell-a](apps/shell-a/README.md) · [shell-b](apps/shell-b/README.md)
 
 ## Troubleshooting

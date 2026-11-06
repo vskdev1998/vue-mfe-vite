@@ -25,6 +25,7 @@ const PAGES = [
   { id: 'ui-dev', group: 'Guides', title: 'ui-dev UI library', file: 'UI_DEV_LIBRARY.md' },
   { id: 'vite7', group: 'Guides', title: 'Vite 7 guide', file: 'VITE7_GUIDE.md' },
   { id: 'migration', group: 'Guides', title: 'webpack → Vite migration', file: 'WEBPACK_TO_VITE_MIGRATION.md' },
+  { id: 'migration-checklist', group: 'Guides', title: 'Migration kit: packages & versions', file: 'MIGRATION_CHECKLIST.md' },
   { id: 'host', group: 'Apps', title: 'Host · :8080', file: 'apps/host/README.md' },
   { id: 'shell-a', group: 'Apps', title: 'Shell A · :8081', file: 'apps/shell-a/README.md' },
   { id: 'shell-b', group: 'Apps', title: 'Shell B · :8082', file: 'apps/shell-b/README.md' },

@@ -29,7 +29,15 @@ export default defineConfig(({ command, mode }) => {
 
       // Auto-import APIs: no more `import { ref, computed } from 'vue'`
       AutoImport({
-        imports: ['vue', 'vue-router', 'vuex'],
+        imports: [
+          'vue', 'vue-router', 'vuex',
+          // lodash-es default export as `_` in <script> and .mjs files.
+          // Not in <template>: there `_` is Vue's internal instance (use a computed).
+          //   _.debounce(fn, 300)  →  import _ from 'lodash-es'
+          { 'lodash-es': [['default', '_']] },
+        ],
+        // Also transform .mjs files (the default only matches .js/.ts/.vue)
+        include: [/\.[cm]?[jt]sx?$/, /\.vue$/, /\.vue\?vue/],
         dirs: ['src/composables', 'src/utils'],
         dts: false, // plain JavaScript project: no .d.ts files
         vueTemplate: true,

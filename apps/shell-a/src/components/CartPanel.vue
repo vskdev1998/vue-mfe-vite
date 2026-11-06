@@ -2,7 +2,7 @@
 const emit = defineEmits(['close'])
 const store = useShellAStore()
 const lines = computed(() => store.state.cart.lines)
-const total = computed(() => store.getters['cart/total'].toFixed(2))
+const total = computed(() => _.round(store.getters['cart/total'], 2).toFixed(2))
 </script>
 
 <template>

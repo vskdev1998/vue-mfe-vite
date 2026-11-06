@@ -92,13 +92,48 @@ export default defineConfig(({ command, mode }) => {   // function form gives co
 
 ```js
 AutoImport({
-  imports: ['vue', 'vue-router', 'vuex'],   // ref, computed, useRoute, useStore…
+  imports: [
+    'vue', 'vue-router', 'vuex',            // ref, computed, useRoute, useStore…
+    { 'lodash-es': [['default', '_']] },    // `_` → import _ from 'lodash-es'
+  ],
+  include: [/\.[cm]?[jt]sx?$/, /\.vue$/, /\.vue\?vue/], // also .mjs files (store modules)
   dirs: ['src/composables', 'src/utils'],   // your own exports become globals too
   dts: false,                               // plain JS: no .d.ts (set a path to generate one)
   vueTemplate: true,                        // also usable inside <template>
 })
 Components({ dirs: ['src/components'], dts: false })
 ```
+
+### lodash as `_`
+
+Every app has `lodash-es` as its own dependency (not federated, see `notShared` in the remotes'
+`shared.federation.json`) and gets `_` without an import line:
+
+```js
+// apps/shell-a/src/store/modules/cart.mjs
+count: (s) => _.sumBy(s.lines, 'qty'),
+total: (s) => _.round(_.sumBy(s.lines, (l) => l.qty * l.price), 2),
+REMOVE(state, id) { state.lines = _.reject(state.lines, { id }) },
+
+// apps/shell-a/src/components/SearchBar.vue
+const search = _.debounce((q) => store.dispatch('catalog/fetch', _.trim(q)), 300)
+watch(query, search)
+onBeforeUnmount(() => search.cancel())
+```
+
+Other uses: `_.startCase` / `_.compact` (host `auth/displayName`), `_.get` / `_.capitalize`
+(host Home), `_.countBy` / `_.filter` / `_.find` (shell-b tasks store), `_.truncate` /
+`_.upperFirst` (shell-b `TaskItem`).
+
+Gotchas:
+
+- **Don't use `_` inside `<template>`.** Vue's component proxy has its own `_` property (the
+  internal instance), so `{{ _.truncate(x) }}` fails with `upperFirst is not a function`.
+  Wrap it in a `computed` in `<script setup>` instead.
+- The default `include` of unplugin-auto-import doesn't match `.mjs`. This repo adds
+  `/\.[cm]?[jt]sx?$/` so `_` (and `ref`, `computed`, …) work in `.mjs` store modules too.
+- `import _ from 'lodash-es'` pulls in all of lodash (about 25 kB gzip per app). If bundle size
+  matters, auto-import named functions instead: `{ 'lodash-es': ['debounce', 'sumBy'] }`.
 
 Keep entry files (`main.mjs`) explicit: it makes bootstrap code readable.
 

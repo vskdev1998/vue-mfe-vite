@@ -1,13 +1,11 @@
 <script setup>
 const store = useShellAStore()
 const query = ref(store.state.catalog.query)
-let timer
+// lodash (auto-imported as `_`): one request 300 ms after the user stops typing
+const search = _.debounce((q) => store.dispatch('catalog/fetch', _.trim(q)), 300)
 
-watch(query, (q) => {
-  clearTimeout(timer)
-  timer = setTimeout(() => store.dispatch('catalog/fetch', String(q).trim()), 300)
-})
-onBeforeUnmount(() => clearTimeout(timer))
+watch(query, search)
+onBeforeUnmount(() => search.cancel())
 </script>
 
 <template>

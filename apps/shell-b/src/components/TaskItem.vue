@@ -1,13 +1,17 @@
 <script setup>
-defineProps({ task: { type: Object, required: true } })
+const props = defineProps({ task: { type: Object, required: true } })
 const store = useShellBStore()
+
+// lodash (auto-imported as `_`). Use `_` in <script>, not in <template>:
+// inside a template `_` resolves to Vue's internal component instance first.
+const label = computed(() => _.truncate(_.upperFirst(props.task.title), { length: 60 }))
 </script>
 
 <template>
   <li class="task" :class="{ 'task--done': task.done }">
     <label class="task__label">
       <input type="checkbox" :checked="task.done" @change="store.dispatch('tasks/toggle', task.id)" />
-      <span>{{ task.title }}</span>
+      <span :title="task.title">{{ label }}</span>
     </label>
     <UiButton variant="ghost" size="sm" aria-label="Delete task" @click="store.dispatch('tasks/remove', task.id)">
       🗑

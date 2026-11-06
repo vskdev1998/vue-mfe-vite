@@ -1,7 +1,7 @@
 <script setup>
 const store = useHostStore()
 const displayName = computed(() => store.getters['auth/displayName'])
-const role = computed(() => store.state.auth.user?.role ?? 'user')
+const role = computed(() => _.capitalize(_.get(store.state, 'auth.user.role', 'user')))
 const cartCount = computed(() => store.state.notifications.cartCount)
 const openTasks = computed(() => store.state.notifications.openTasks)
 const lastEvent = computed(() => store.state.notifications.lastEvent)
