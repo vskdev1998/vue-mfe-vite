@@ -1,0 +1,27 @@
+// Shell B design tokens (teal theme). Only variables/mixins here: no CSS output.
+@use 'sass:color';
+
+$accent: #0d9488;
+$accent-dark: #0f766e;
+$warn: #f59e0b;
+$text: #134e4a;
+$muted: #6b7280;
+$surface: #ffffff;
+$border: #ccfbf1;
+$radius: 12px;
+
+@mixin card {
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: $radius;
+}
+
+@mixin mq($min) {
+  @media (min-width: $min) {
+    @content;
+  }
+}
+
+@function soft($color, $amount: 88%) {
+  @return color.mix(#fff, $color, $amount);
+}

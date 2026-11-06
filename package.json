@@ -1,0 +1,28 @@
+{
+  "name": "vue-mfe-vite",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Vue 3 + Vite 7 micro-frontend monorepo (host + shell-a + shell-b) using Module Federation",
+  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n host,shell-a,shell-b -c blue,green,magenta \"npm:dev:host\" \"npm:dev:shell-a\" \"npm:dev:shell-b\"",
+    "dev:host": "npm run dev -w @mfe/host",
+    "dev:shell-a": "npm run dev -w @mfe/shell-a",
+    "dev:shell-b": "npm run dev -w @mfe/shell-b",
+    "build": "npm run build -w @mfe/shell-a && npm run build -w @mfe/shell-b && npm run build -w @mfe/host",
+    "build:staging": "npm run build:staging -w @mfe/shell-a && npm run build:staging -w @mfe/shell-b && npm run build:staging -w @mfe/host",
+    "build:localprod": "npm run build:localprod -w @mfe/shell-a && npm run build:localprod -w @mfe/shell-b && npm run build:localprod -w @mfe/host",
+    "preview": "concurrently -k -n host,shell-a,shell-b -c blue,green,magenta \"npm run preview -w @mfe/host\" \"npm run preview -w @mfe/shell-a\" \"npm run preview -w @mfe/shell-b\"",
+    "start": "npm run build:localprod && npm run preview",
+    "clean": "rm -rf apps/*/dist apps/*/node_modules/.vite apps/*/.__mf__temp"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}

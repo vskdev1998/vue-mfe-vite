@@ -1,0 +1,27 @@
+{
+  "name": "@mfe/shell-a",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Remote micro-frontend A (product catalog + cart). Exposes ./App via Module Federation; also runs standalone.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:staging": "vite build --mode staging",
+    "build:localprod": "vite build --mode localprod",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.13.0",
+    "vue": "^3.5.0",
+    "vuex": "^4.1.0"
+  },
+  "devDependencies": {
+    "@module-federation/vite": "^1.23.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "sass": "^1.93.0",
+    "unplugin-auto-import": "^21.0.0",
+    "unplugin-vue-components": "^32.0.0",
+    "vite": "^7.3.0"
+  }
+}
